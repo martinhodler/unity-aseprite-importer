@@ -1,0 +1,10 @@
+{
+  "name": "io.tinu.asepriteimporter",
+  "displayName": "Aseprite Importer",
+  "version": "1.0.0",
+  "unity": "2018.1",
+  "description": "An aseprite-file importer for unity written in C#, built upon the experimental AssetImporter API.",
+  "keywords": [ "Experimental", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
+  "category": "Importers",
+  "dependencies": {}
+}

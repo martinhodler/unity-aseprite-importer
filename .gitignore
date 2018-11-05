@@ -34,3 +34,6 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# Metafiles (Not needed for distribution of Aseprite Importer)
+*.meta
