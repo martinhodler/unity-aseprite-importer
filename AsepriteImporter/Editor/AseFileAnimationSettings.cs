@@ -2,23 +2,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class AseFileAnimationSettings
+namespace AsepriteImporter
 {
-
-    public AseFileAnimationSettings() { }
-
-    public AseFileAnimationSettings(string name)
+    [System.Serializable]
+    public class AseFileAnimationSettings
     {
-        animationName = name;
-    }
 
-    [SerializeField] public string animationName;
-    [SerializeField] public bool loopTime = true;
-    [SerializeField] public string about;
+        public AseFileAnimationSettings()
+        {
+        }
 
-    public override string ToString()
-    {
-        return animationName;
+        public AseFileAnimationSettings(string name)
+        {
+            animationName = name;
+        }
+
+        [SerializeField] public string animationName;
+        [SerializeField] public bool loopTime = true;
+        [SerializeField] public string about;
+
+        public override string ToString()
+        {
+            return animationName;
+        }
     }
 }

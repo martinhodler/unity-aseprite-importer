@@ -60,7 +60,7 @@ namespace Aseprite
             Frame frame = Frames[index];
 
 
-            Texture2D texture = Texture2DBlender.CreateTransparentTexture(Header.Width, Header.Height);
+            Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
 
             
             List<LayerChunk> layers = GetChunks<LayerChunk>();
@@ -106,7 +106,7 @@ namespace Aseprite
 
         public Texture2D GetTextureFromCel(CelChunk cel)
         {
-            Texture2D texture = Texture2DBlender.CreateTransparentTexture(Header.Width, Header.Height);
+            Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
 
             int i = 0;
             int x = 0;
@@ -157,7 +157,7 @@ namespace Aseprite
         {
             Texture2D[] frames = this.GetFrames();
 
-            Texture2D atlas = Texture2DBlender.CreateTransparentTexture(Header.Width * frames.Length, Header.Height);
+            Texture2D atlas = Texture2DUtil.CreateTransparentTexture(Header.Width * frames.Length, Header.Height);
             List<Rect> spriteRects = new List<Rect>();
 
             int col = 0;
