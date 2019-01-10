@@ -10,6 +10,6 @@ Import the ```AsepriteImporter``` folder into your project. Now it should import
 
 ## License
 
-See LICENSE.md
+See LICENSE file.
 
 Note: As of Unity doesn't include any editor scripts in the game, you don't have to license your game under GPL.
