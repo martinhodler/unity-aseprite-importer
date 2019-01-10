@@ -7,3 +7,9 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 Import the ```AsepriteImporter``` folder into your project. Now it should import all newly added .ase-files automatically. Already imported assets do need a manual re-import.
 
 ![Demo GIF of AsepriteImporter](https://raw.githubusercontent.com/martinhodler/unity-aseprite-importer/master/Media/aseprite-importer-demo.gif)
+
+## License
+
+See LICENSE.md
+
+Note: As of Unity doesn't include any editor scripts in the game, you don't have to license your game under GPL.
