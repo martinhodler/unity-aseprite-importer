@@ -1,5 +1,4 @@
-﻿using Aseprite.PixelFormats;
-using System.IO;
+﻿using System.IO;
 
 namespace Aseprite.Chunks
 {

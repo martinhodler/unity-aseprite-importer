@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Aseprite
 {
 
-    // See: https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md
+    // See file specs here: https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md
 
     public class AseFile
     {

@@ -1,12 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 
 namespace AsepriteImporter
 {
-	[System.Serializable]
+    [System.Serializable]
 	public class AseFileTextureSettings
 	{
 

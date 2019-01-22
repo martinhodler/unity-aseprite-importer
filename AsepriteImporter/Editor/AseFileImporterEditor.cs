@@ -1,10 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor;
-using UnityEditorInternal;
-using System.Linq;
 
 namespace AsepriteImporter
 {

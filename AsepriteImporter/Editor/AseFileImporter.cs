@@ -1,15 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.Experimental.AssetImporters;
 using System.IO;
 using Aseprite;
 using UnityEditor;
-using UnityEditor.Animations;
 using Aseprite.Chunks;
-using Unity.Collections;
 using System.Text;
-using UnityEngine.Experimental.UIElements;
 
 namespace AsepriteImporter
 {

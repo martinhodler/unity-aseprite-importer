@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Aseprite.Utils;
-using TMPro.SpriteAssetUtilities;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
@@ -38,7 +37,6 @@ namespace AsepriteImporter
             var rows = 1;
 
             float spriteCount = sprites.Length;
-            var canvasSize = 0;
             
             var divider = 2;
 
