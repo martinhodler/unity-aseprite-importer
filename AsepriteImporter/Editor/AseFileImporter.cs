@@ -142,7 +142,7 @@ namespace AsepriteImporter
             foreach (var animation in animations)
             {
                 AnimationClip animationClip = new AnimationClip();
-                animationClip.name = animation.TagName;
+                animationClip.name = name + "_" + animation.TagName;
                 animationClip.frameRate = 25;
 
                 AseFileAnimationSettings importSettings = GetAnimationSettingFor(animSettings, animation);
