@@ -12,7 +12,8 @@ namespace AsepriteImporter
     public enum AseFileImportType
     {
         Sprite,
-        Tileset
+        Tileset,
+        LayerToSprite
     }
 
     [ScriptedImporter(1, new []{ "ase", "aseprite" })]
@@ -31,7 +32,12 @@ namespace AsepriteImporter
             int frameCount = aseFile.Header.Frames;
 
             SpriteAtlasBuilder atlasBuilder = new SpriteAtlasBuilder(textureSettings, aseFile.Header.Width, aseFile.Header.Height);
-            Texture2D[] frames = aseFile.GetFrames();
+
+            Texture2D[] frames = null;
+            if (importType != AseFileImportType.LayerToSprite)
+                frames = aseFile.GetFrames();
+            else
+                frames = aseFile.GetLayersAsFrames();
             
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
             atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
@@ -47,6 +53,7 @@ namespace AsepriteImporter
 
             switch (importType)
             {
+                case AseFileImportType.LayerToSprite:
                 case AseFileImportType.Sprite:
                     ImportSprites(ctx, aseFile, spriteImportData);
                     break;

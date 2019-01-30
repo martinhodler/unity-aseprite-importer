@@ -64,7 +64,10 @@ namespace AsepriteImporter
                 divider -= 2;
             else
                 divider -= 1;
-            
+
+            if (divider < 1)
+                divider = 1;
+
             cols = (int)Math.Ceiling(spriteCount / divider);
             rows = (int)Math.Ceiling(spriteCount / cols);
             

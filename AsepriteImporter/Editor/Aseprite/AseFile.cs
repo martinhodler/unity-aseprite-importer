@@ -55,6 +55,23 @@ namespace Aseprite
             return frames.ToArray();
         }
 
+
+        public Texture2D[] GetLayersAsFrames()
+        {
+            List<Texture2D> frames = new List<Texture2D>();
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+
+            for (int i = 0; i < layers.Count; i++)
+            {
+                List<Texture2D> layerFrames = GetLayerTexture(i, layers[i]);
+
+                if (layerFrames.Count > 0)
+                    frames.AddRange(layerFrames);
+            }
+
+            return frames.ToArray();
+        }
+
         private LayerChunk GetParentLayer(LayerChunk layer)
         {
             if (layer.LayerChildLevel == 0)
@@ -77,6 +94,47 @@ namespace Aseprite
             return null;
         }
 
+        public List<Texture2D> GetLayerTexture(int layerIndex, LayerChunk layer)
+        {
+
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+            List<Texture2D> textures = new List<Texture2D>();
+
+            for (int frameIndex = 0; frameIndex < Frames.Count; frameIndex++)
+            {
+                Frame frame = Frames[frameIndex];
+                List<CelChunk> cels = frame.GetChunks<CelChunk>();
+
+                for (int i = 0; i < cels.Count; i++)
+                {
+                    if (cels[i].LayerIndex != layerIndex)
+                        continue;
+
+                    LayerBlendMode blendMode = layer.BlendMode;
+                    float opacity = Mathf.Min(layer.Opacity / 255f, cels[i].Opacity / 255f);
+
+                    bool visibility = layer.Visible;
+
+                    LayerChunk parent = GetParentLayer(layer);
+                    while (parent != null)
+                    {
+                        visibility &= parent.Visible;
+                        if (visibility == false)
+                            break;
+
+                        parent = GetParentLayer(parent);
+                    }
+
+                    if (visibility == false || layer.LayerType == LayerType.Group)
+                        continue;
+
+                    textures.Add(GetTextureFromCel(cels[i]));
+                }
+            }
+
+            return textures;
+        }
+
         public Texture2D GetFrame(int index)
         {
             Frame frame = Frames[index];
@@ -91,7 +149,6 @@ namespace Aseprite
 
             for (int i = 0; i < cels.Count; i++)
             {
-                
                 LayerChunk layer = layers[cels[i].LayerIndex];
 
                 LayerBlendMode blendMode = layer.BlendMode;
