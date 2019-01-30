@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 
 namespace Aseprite.Chunks
 {
@@ -17,7 +13,9 @@ namespace Aseprite.Chunks
             get
             {
                 if (linkedCelChunk == null)
-                    linkedCelChunk = file.Frames[FramePosition].GetChunk<CelChunk>();
+                {
+                    linkedCelChunk = file.Frames[FramePosition].GetCelChunk<CelChunk>(LayerIndex);
+                }
 
                 return linkedCelChunk;
             }

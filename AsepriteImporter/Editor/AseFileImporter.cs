@@ -15,7 +15,7 @@ namespace AsepriteImporter
         Tileset
     }
 
-    [ScriptedImporter(1, "ase")]
+    [ScriptedImporter(1, new []{ "ase", "aseprite" })]
     public class AseFileImporter : ScriptedImporter
     {
         [SerializeField] public AseFileTextureSettings textureSettings = new AseFileTextureSettings();

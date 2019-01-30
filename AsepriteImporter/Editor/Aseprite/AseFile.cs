@@ -55,10 +55,31 @@ namespace Aseprite
             return frames.ToArray();
         }
 
+        private LayerChunk GetParentLayer(LayerChunk layer)
+        {
+            if (layer.LayerChildLevel == 0)
+                return null;
+
+            int childLevel = layer.LayerChildLevel;
+
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+            int index = layers.IndexOf(layer);
+
+            if (index < 0)
+                return null;
+
+            for (int i = index -1; i > 0; i--)
+            {
+                if (layers[i].LayerChildLevel == layer.LayerChildLevel - 1)
+                    return layers[i];
+            }
+
+            return null;
+        }
+
         public Texture2D GetFrame(int index)
         {
             Frame frame = Frames[index];
-
 
             Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
 
@@ -70,8 +91,27 @@ namespace Aseprite
 
             for (int i = 0; i < cels.Count; i++)
             {
-                LayerBlendMode blendMode = layers[cels[i].LayerIndex].BlendMode;
-                float opacity = layers[cels[i].LayerIndex].Opacity / 255f;
+                
+                LayerChunk layer = layers[cels[i].LayerIndex];
+
+                LayerBlendMode blendMode = layer.BlendMode;
+                float opacity = Mathf.Min(layer.Opacity / 255f, cels[i].Opacity / 255f);
+
+                bool visibility = layer.Visible;
+
+
+                LayerChunk parent = GetParentLayer(layer);
+                while (parent != null)
+                {
+                    visibility &= parent.Visible;
+                    if (visibility == false)
+                        break;
+
+                    parent = GetParentLayer(parent);
+                }
+
+                if (visibility == false || layer.LayerType == LayerType.Group)
+                    continue;
 
                 Texture2D celTex = GetTextureFromCel(cels[i]);
                 
@@ -111,26 +151,52 @@ namespace Aseprite
             int i = 0;
             int x = 0;
             int y = 0;
+
+            int destX = 0;
+            int destY = 0;
+            int offsetX = 0;
+            int offsetY = 0;
+
             int index = 0;
 
             int width = Mathf.Min(cel.Width, Header.Width);
             int height = Mathf.Min(cel.Height, Header.Height);
 
+            bool overlappingX = cel.Width + cel.X > Header.Width;
+            bool overlappingY = cel.Height + cel.Y > Header.Height;
+
+            if (overlappingX)
+                width -= (cel.X + cel.Width) - Header.Width;
+
+            if (overlappingY)
+                height -= (cel.Y + cel.Height) - Header.Height;
+
+            if (cel.X < 0)
+                offsetX = cel.X * -1;
+
+            if (cel.Y < 0)
+                offsetY = cel.Y * -1;
+
+
             Color[] colors = new Color[width * height];
 
-            for (y = 0; y < height; y++)
+
+            for (y = offsetY; y < height; y++)
             {
-                for (x = 0; x < width; x++)
+                destX = 0;
+                for (x = offsetX; x < width; x++)
                 {
                     i = y * cel.Width + x;
                     index = (height - (y + 1)) * width + x;
 
-
                     colors[index] = cel.RawPixelData[i].GetColor();
+                    destX++;
                 }
+
+                destY++;
             }
 
-            texture.SetPixels(cel.X, Header.Height - cel.Y - Mathf.Min(cel.Height, Header.Height), Mathf.Min(cel.Width, Header.Width), Mathf.Min(cel.Height, Header.Height), colors);
+            texture.SetPixels(cel.X + offsetX, Header.Height - (cel.Y + offsetY) - height, width, height, colors);
             texture.Apply();
 
             return texture;
