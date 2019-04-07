@@ -203,57 +203,38 @@ namespace Aseprite
 
         public Texture2D GetTextureFromCel(CelChunk cel)
         {
-            Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
+            int canvasWidth = Header.Width;
+            int canvasHeight = Header.Height;
+            
+            Texture2D texture = Texture2DUtil.CreateTransparentTexture(canvasWidth, canvasHeight);
 
-            int i = 0;
-            int x = 0;
-            int y = 0;
+            // Only need to render as large as viewport or cel, whichever is smaller
+            int renderRectWidth = Math.Min(canvasWidth, cel.Width);
+            int renderRectHeight = Math.Min(canvasHeight, cel.Height);
+            Color[] colors = new Color[renderRectWidth * renderRectHeight];
+            
+            // Sometimes cell width/height can be larger than image (pixels stored off-screen), adjust our rect to fit canvas viewport
+            
+            // If cel offset is positive, displace the same amount on our texture
+            int destX = Mathf.Max(0, cel.X);
+            int destY = Mathf.Max(0, canvasHeight - cel.Height - cel.Y); // Aseprite is upper left origin, Unity textures are lower left, so perform flip
+            
+            // If cell offset is negative, displace the same same amount on cel data
+            int celX = Mathf.Max(0, -cel.X);
+            int celY = Mathf.Max(0, -cel.Y);
 
-            int destX = 0;
-            int destY = 0;
-            int offsetX = 0;
-            int offsetY = 0;
-
-            int index = 0;
-
-            int width = Mathf.Min(cel.Width, Header.Width);
-            int height = Mathf.Min(cel.Height, Header.Height);
-
-            bool overlappingX = cel.Width + cel.X > Header.Width;
-            bool overlappingY = cel.Height + cel.Y > Header.Height;
-
-            if (overlappingX)
-                width -= (cel.X + cel.Width) - Header.Width;
-
-            if (overlappingY)
-                height -= (cel.Y + cel.Height) - Header.Height;
-
-            if (cel.X < 0)
-                offsetX = cel.X * -1;
-
-            if (cel.Y < 0)
-                offsetY = cel.Y * -1;
-
-
-            Color[] colors = new Color[width * height];
-
-
-            for (y = offsetY; y < height; y++)
+            for (int y = 0; y < renderRectHeight; y++)
             {
-                destX = 0;
-                for (x = offsetX; x < width; x++)
+                for (int x = 0; x < renderRectWidth; x++)
                 {
-                    i = y * cel.Width + x;
-                    index = (height - (y + 1)) * width + x;
+                    int celDataIndex = (y + celY) * cel.Width + (x + celX);
+                    int index = (renderRectHeight - 1 - (y)) * renderRectWidth + (x);
 
-                    colors[index] = cel.RawPixelData[i].GetColor();
-                    destX++;
+                    colors[index] = cel.RawPixelData[celDataIndex].GetColor();
                 }
-
-                destY++;
             }
 
-            texture.SetPixels(cel.X + offsetX, Header.Height - (cel.Y + offsetY) - height, width, height, colors);
+            texture.SetPixels(destX, destY, renderRectWidth, renderRectHeight, colors);
             texture.Apply();
 
             return texture;
