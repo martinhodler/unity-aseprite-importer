@@ -163,7 +163,7 @@ namespace AsepriteImporter
 
 
                 int length = animation.FrameTo - animation.FrameFrom + 1;
-                ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length];
+                ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length + 1]; // plus last frame to keep the duration
 
                 float time = 0;
 
@@ -189,6 +189,15 @@ namespace AsepriteImporter
                     keyIndex += step;
                     spriteKeyFrames[i] = frame;
                 }
+
+                float frameTime = 1f / animationClip.frameRate;
+
+                ObjectReferenceKeyframe lastFrame = new ObjectReferenceKeyframe();
+                lastFrame.time = time - frameTime;
+                lastFrame.value = sprites[keyIndex - step];
+
+                spriteKeyFrames[spriteKeyFrames.Length - 1] = lastFrame;
+
 
                 AnimationUtility.SetObjectReferenceCurve(animationClip, spriteBinding, spriteKeyFrames);
                 AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(animationClip);
