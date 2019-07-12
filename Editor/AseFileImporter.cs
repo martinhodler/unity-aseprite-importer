@@ -118,7 +118,9 @@ namespace AsepriteImporter
         private string GetFileName(string assetPath)
         {
             string[] parts = assetPath.Split('/');
-            return parts[parts.Length - 1].Replace(".ase", "");
+            string filename = parts[parts.Length - 1];
+
+            return filename.Substring(0, filename.LastIndexOf('.'));
         }
 
         private static AseFile ReadAseFile(string assetPath)
