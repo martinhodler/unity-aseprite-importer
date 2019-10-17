@@ -1,5 +1,6 @@
 ﻿using Aseprite.Chunks;
 using Aseprite.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -55,10 +56,89 @@ namespace Aseprite
             return frames.ToArray();
         }
 
+
+        public Texture2D[] GetLayersAsFrames()
+        {
+            List<Texture2D> frames = new List<Texture2D>();
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+
+            for (int i = 0; i < layers.Count; i++)
+            {
+                List<Texture2D> layerFrames = GetLayerTexture(i, layers[i]);
+
+                if (layerFrames.Count > 0)
+                    frames.AddRange(layerFrames);
+            }
+
+            return frames.ToArray();
+        }
+
+        private LayerChunk GetParentLayer(LayerChunk layer)
+        {
+            if (layer.LayerChildLevel == 0)
+                return null;
+
+            int childLevel = layer.LayerChildLevel;
+
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+            int index = layers.IndexOf(layer);
+
+            if (index < 0)
+                return null;
+
+            for (int i = index -1; i > 0; i--)
+            {
+                if (layers[i].LayerChildLevel == layer.LayerChildLevel - 1)
+                    return layers[i];
+            }
+
+            return null;
+        }
+
+        public List<Texture2D> GetLayerTexture(int layerIndex, LayerChunk layer)
+        {
+
+            List<LayerChunk> layers = GetChunks<LayerChunk>();
+            List<Texture2D> textures = new List<Texture2D>();
+
+            for (int frameIndex = 0; frameIndex < Frames.Count; frameIndex++)
+            {
+                Frame frame = Frames[frameIndex];
+                List<CelChunk> cels = frame.GetChunks<CelChunk>();
+
+                for (int i = 0; i < cels.Count; i++)
+                {
+                    if (cels[i].LayerIndex != layerIndex)
+                        continue;
+
+                    LayerBlendMode blendMode = layer.BlendMode;
+                    float opacity = Mathf.Min(layer.Opacity / 255f, cels[i].Opacity / 255f);
+
+                    bool visibility = layer.Visible;
+
+                    LayerChunk parent = GetParentLayer(layer);
+                    while (parent != null)
+                    {
+                        visibility &= parent.Visible;
+                        if (visibility == false)
+                            break;
+
+                        parent = GetParentLayer(parent);
+                    }
+
+                    if (visibility == false || layer.LayerType == LayerType.Group)
+                        continue;
+
+                    textures.Add(GetTextureFromCel(cels[i]));
+                }
+            }
+
+            return textures;
+        }
+
         public Texture2D GetFrame(int index)
         {
             Frame frame = Frames[index];
-
 
             Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
 
@@ -70,8 +150,26 @@ namespace Aseprite
 
             for (int i = 0; i < cels.Count; i++)
             {
-                LayerBlendMode blendMode = layers[cels[i].LayerIndex].BlendMode;
-                float opacity = layers[cels[i].LayerIndex].Opacity / 255f;
+                LayerChunk layer = layers[cels[i].LayerIndex];
+
+                LayerBlendMode blendMode = layer.BlendMode;
+                float opacity = Mathf.Min(layer.Opacity / 255f, cels[i].Opacity / 255f);
+
+                bool visibility = layer.Visible;
+
+
+                LayerChunk parent = GetParentLayer(layer);
+                while (parent != null)
+                {
+                    visibility &= parent.Visible;
+                    if (visibility == false)
+                        break;
+
+                    parent = GetParentLayer(parent);
+                }
+
+                if (visibility == false || layer.LayerType == LayerType.Group)
+                    continue;
 
                 Texture2D celTex = GetTextureFromCel(cels[i]);
                 
@@ -106,31 +204,38 @@ namespace Aseprite
 
         public Texture2D GetTextureFromCel(CelChunk cel)
         {
-            Texture2D texture = Texture2DUtil.CreateTransparentTexture(Header.Width, Header.Height);
+            int canvasWidth = Header.Width;
+            int canvasHeight = Header.Height;
+            
+            Texture2D texture = Texture2DUtil.CreateTransparentTexture(canvasWidth, canvasHeight);
 
-            int i = 0;
-            int x = 0;
-            int y = 0;
-            int index = 0;
+            // Only need to render as large as viewport or cel, whichever is smaller
+            int renderRectWidth = Math.Min(canvasWidth, cel.Width);
+            int renderRectHeight = Math.Min(canvasHeight, cel.Height);
+            Color[] colors = new Color[renderRectWidth * renderRectHeight];
+            
+            // Sometimes cell width/height can be larger than image (pixels stored off-screen), adjust our rect to fit canvas viewport
+            
+            // If cel offset is positive, displace the same amount on our texture
+            int destX = Mathf.Max(0, cel.X);
+            int destY = Mathf.Max(0, canvasHeight - cel.Height - cel.Y); // Aseprite is upper left origin, Unity textures are lower left, so perform flip
+            
+            // If cell offset is negative, displace the same same amount on cel data
+            int celX = Mathf.Max(0, -cel.X);
+            int celY = Mathf.Max(0, -cel.Y);
 
-            int width = Mathf.Min(cel.Width, Header.Width);
-            int height = Mathf.Min(cel.Height, Header.Height);
-
-            Color[] colors = new Color[width * height];
-
-            for (y = 0; y < height; y++)
+            for (int y = 0; y < renderRectHeight; y++)
             {
-                for (x = 0; x < width; x++)
+                for (int x = 0; x < renderRectWidth; x++)
                 {
-                    i = y * cel.Width + x;
-                    index = (height - (y + 1)) * width + x;
+                    int celDataIndex = (y + celY) * cel.Width + (x + celX);
+                    int index = (renderRectHeight - 1 - (y)) * renderRectWidth + (x);
 
-
-                    colors[index] = cel.RawPixelData[i].GetColor();
+                    colors[index] = cel.RawPixelData[celDataIndex].GetColor();
                 }
             }
 
-            texture.SetPixels(cel.X, Header.Height - cel.Y - Mathf.Min(cel.Height, Header.Height), Mathf.Min(cel.Width, Header.Width), Mathf.Min(cel.Height, Header.Height), colors);
+            texture.SetPixels(destX, destY, renderRectWidth, renderRectHeight, colors);
             texture.Apply();
 
             return texture;

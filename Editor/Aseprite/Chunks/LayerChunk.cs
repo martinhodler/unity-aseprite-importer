@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 
 namespace Aseprite.Chunks
@@ -46,6 +43,11 @@ namespace Aseprite.Chunks
         public byte Opacity { get; private set; }
 
         public string LayerName { get; private set; }
+
+        public bool Visible
+        {
+            get { return Flags % 2 == 1; }
+        }
 
         public LayerChunk(uint length, BinaryReader reader) : base(length, ChunkType.Layer)
         {

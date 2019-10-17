@@ -12,10 +12,11 @@ namespace AsepriteImporter
     public enum AseFileImportType
     {
         Sprite,
-        Tileset
+        Tileset,
+        LayerToSprite
     }
 
-    [ScriptedImporter(1, "ase")]
+    [ScriptedImporter(1, new []{ "ase", "aseprite" })]
     public class AseFileImporter : ScriptedImporter
     {
         [SerializeField] public AseFileTextureSettings textureSettings = new AseFileTextureSettings();
@@ -31,7 +32,12 @@ namespace AsepriteImporter
             int frameCount = aseFile.Header.Frames;
 
             SpriteAtlasBuilder atlasBuilder = new SpriteAtlasBuilder(textureSettings, aseFile.Header.Width, aseFile.Header.Height);
-            Texture2D[] frames = aseFile.GetFrames();
+
+            Texture2D[] frames = null;
+            if (importType != AseFileImportType.LayerToSprite)
+                frames = aseFile.GetFrames();
+            else
+                frames = aseFile.GetLayersAsFrames();
             
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
             atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
@@ -47,6 +53,7 @@ namespace AsepriteImporter
 
             switch (importType)
             {
+                case AseFileImportType.LayerToSprite:
                 case AseFileImportType.Sprite:
                     ImportSprites(ctx, aseFile, spriteImportData);
                     break;
@@ -111,7 +118,9 @@ namespace AsepriteImporter
         private string GetFileName(string assetPath)
         {
             string[] parts = assetPath.Split('/');
-            return parts[parts.Length - 1].Replace(".ase", "");
+            string filename = parts[parts.Length - 1];
+
+            return filename.Substring(0, filename.LastIndexOf('.'));
         }
 
         private static AseFile ReadAseFile(string assetPath)
@@ -156,7 +165,7 @@ namespace AsepriteImporter
 
 
                 int length = animation.FrameTo - animation.FrameFrom + 1;
-                ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length];
+                ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length + 1]; // plus last frame to keep the duration
 
                 float time = 0;
 
@@ -182,6 +191,15 @@ namespace AsepriteImporter
                     keyIndex += step;
                     spriteKeyFrames[i] = frame;
                 }
+
+                float frameTime = 1f / animationClip.frameRate;
+
+                ObjectReferenceKeyframe lastFrame = new ObjectReferenceKeyframe();
+                lastFrame.time = time - frameTime;
+                lastFrame.value = sprites[keyIndex - step];
+
+                spriteKeyFrames[spriteKeyFrames.Length - 1] = lastFrame;
+
 
                 AnimationUtility.SetObjectReferenceCurve(animationClip, spriteBinding, spriteKeyFrames);
                 AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(animationClip);

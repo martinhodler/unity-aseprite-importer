@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Aseprite.Chunks;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Aseprite
@@ -42,6 +43,19 @@ namespace Aseprite
             for (int i = 0; i < Chunks.Count; i++)
             {
                 if (Chunks[i] is T)
+                {
+                    return (T)Chunks[i];
+                }
+            }
+
+            return null;
+        }
+
+        public T GetCelChunk<T>(int layerIndex) where T : CelChunk
+        {
+            for (int i = 0; i < Chunks.Count; i++)
+            {
+                if (Chunks[i] is T && (Chunks[i] as CelChunk).LayerIndex == layerIndex)
                 {
                     return (T)Chunks[i];
                 }

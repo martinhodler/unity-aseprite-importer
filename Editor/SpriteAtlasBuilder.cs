@@ -43,6 +43,7 @@ namespace AsepriteImporter
             var width = cols * spriteSize.x;
             var height = rows * spriteSize.y;
 
+            
             while (width > height)
             {
                 cols = (int)Math.Ceiling(spriteCount / divider);
@@ -50,6 +51,11 @@ namespace AsepriteImporter
 
                 width = cols * spriteSize.x;
                 height = rows * spriteSize.y;
+
+                if (cols <= 1)
+                {
+                    break;
+                }
                 
                 divider++;
             }
@@ -58,7 +64,10 @@ namespace AsepriteImporter
                 divider -= 2;
             else
                 divider -= 1;
-            
+
+            if (divider < 1)
+                divider = 1;
+
             cols = (int)Math.Ceiling(spriteCount / divider);
             rows = (int)Math.Ceiling(spriteCount / cols);
             

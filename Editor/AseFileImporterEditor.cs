@@ -9,7 +9,7 @@ namespace AsepriteImporter
     public class AseFileImporterEditor : ScriptedImporterEditor
     {
 
-        private string[] importTypes = new string[] {"Sprite", "Tileset (Grid)"};
+        private string[] importTypes = new string[] {"Sprite", "Tileset (Grid)", "Layer To Sprite"};
 
         private string[] spritePivotOptions = new string[]
         {
