@@ -40,10 +40,20 @@ namespace AsepriteImporter
                 frames = aseFile.GetLayersAsFrames();
             
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
-            atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
-            
+
+            if (textureSettings.transparentMask)
+            {
+                atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentColor, false);
+            }
+            else
+            {
+                atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
+
+            }
+                         
+
             atlas.filterMode = textureSettings.filterMode;
-            atlas.alphaIsTransparency = true;
+            atlas.alphaIsTransparency = false;
             atlas.wrapMode = TextureWrapMode.Clamp;
             atlas.name = "Texture";
 

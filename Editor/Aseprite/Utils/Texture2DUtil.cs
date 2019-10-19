@@ -15,6 +15,6 @@ namespace Aseprite.Utils
             texture.Apply();
 
             return texture;
-        }        
+        }       
     }
 }

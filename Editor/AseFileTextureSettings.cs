@@ -10,7 +10,9 @@ namespace AsepriteImporter
 
 		[SerializeField] public TextureImporterType textureType = TextureImporterType.Sprite;
 		[SerializeField] public int pixelsPerUnit = 32;
-		[SerializeField] public SpriteMeshType meshType = SpriteMeshType.Tight;
+        [SerializeField] public bool transparentMask = false;       
+        [SerializeField] public Color transparentColor = Color.magenta; 
+        [SerializeField] public SpriteMeshType meshType = SpriteMeshType.Tight;
 		[Range(0, 32)] [SerializeField] public uint extrudeEdges = 1;
 		[SerializeField] public Vector2 spritePivot = new Vector2(0.5f, 0.5f);
 		[SerializeField] public bool generatePhysics = true;
