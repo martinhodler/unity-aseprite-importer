@@ -7,8 +7,8 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 ## Usage
 Import the ```unity-aseprite-importer``` folder into your project's Packages folder. Now it should import all newly added .ase-files automatically. Already imported assets do need a manual re-import.
 
-![Demo GIF of AsepriteImporter](Github/aseprite-importer-demo.gif)
-![Demo Transparency Masking of AsepriteImporter](Github/aseprite-transparency-demo.gif)
+![Demo GIF of AsepriteImporter](GitHub/aseprite-importer-demo.gif)
+![Demo Transparency Masking of AsepriteImporter](GitHub/aseprite-transparency-demo.gif)
 
 [![PayPal](https://www.paypalobjects.com/en_US/CH/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JNDPF8VN5GTCY&source=url)
 
