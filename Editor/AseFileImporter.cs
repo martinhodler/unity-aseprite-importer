@@ -41,16 +41,18 @@ namespace AsepriteImporter
             
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
 
-            if (textureSettings.transparentMask)
-            {
-                atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentColor, false);
-            }
-            else
-            {
-                atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
+            //if (textureSettings.transparentMask)
+            //{
+            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentColor, false);
+            //}
+            //else
+            //{
+            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
 
-            }
-                         
+            //}
+
+            atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentMask, false);
+
 
             atlas.filterMode = textureSettings.filterMode;
             atlas.alphaIsTransparency = false;

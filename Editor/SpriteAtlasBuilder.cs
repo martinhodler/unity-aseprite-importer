@@ -29,7 +29,7 @@ namespace AsepriteImporter
             this.textureSettings = textureSettings;
         }
 
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, Color mask, bool baseTwo = true)
+        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, bool mask, bool baseTwo = true)
         {
             var cols = sprites.Length;
             var rows = 1;
@@ -69,50 +69,14 @@ namespace AsepriteImporter
             cols = (int)Math.Ceiling(spriteCount / divider);
             rows = (int)Math.Ceiling(spriteCount / cols);
 
-            return GenerateAtlas(sprites, out spriteData, cols, rows, mask, baseTwo);
-        }
-
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, bool baseTwo = true)
-        {
-            var cols = sprites.Length;
-            var rows = 1;
-
-            float spriteCount = sprites.Length;
-            
-            var divider = 2;
-
-            var width = cols * spriteSize.x;
-            var height = rows * spriteSize.y;
-
-            
-            while (width > height)
+            if (mask)
             {
-                cols = (int)Math.Ceiling(spriteCount / divider);
-                rows = (int)Math.Ceiling(spriteCount / cols);
-
-                width = cols * spriteSize.x;
-                height = rows * spriteSize.y;
-
-                if (cols <= 1)
-                {
-                    break;
-                }
-                
-                divider++;
+                return GenerateAtlas(sprites, out spriteData, cols, rows, textureSettings.transparentColor, baseTwo);
             }
-
-            if (height > width)
-                divider -= 2;
             else
-                divider -= 1;
-
-            if (divider < 1)
-                divider = 1;
-
-            cols = (int)Math.Ceiling(spriteCount / divider);
-            rows = (int)Math.Ceiling(spriteCount / cols);
-            
-            return GenerateAtlas(sprites, out spriteData, cols, rows, baseTwo);
+            {
+                return GenerateAtlas(sprites, out spriteData, cols, rows, baseTwo);
+            }
         }
 
         public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, int cols, int rows, bool baseTwo = true)
