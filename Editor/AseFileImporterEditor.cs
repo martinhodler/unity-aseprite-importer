@@ -45,6 +45,22 @@ namespace AsepriteImporter
                     importTypeProperty.intValue = importType;
                 }
 
+                var transparentColorMask = serializedObject.FindProperty(textureSettings + "transparentMask");
+                var transparentColor = serializedObject.FindProperty(textureSettings + "transparentColor");
+
+                Rect lastRect = GUILayoutUtility.GetLastRect();
+                Rect resetButton = new Rect(EditorGUIUtility.labelWidth + 50, lastRect.y + EditorGUIUtility.singleLineHeight, 60, 18);
+                if (GUI.Button(resetButton, "Reset")){
+                    transparentColor.colorValue = Color.magenta;
+                }
+
+                EditorGUILayout.PropertyField(transparentColorMask);
+                if (transparentColorMask.boolValue)
+                {
+                    EditorGUILayout.PropertyField(transparentColor);
+                    
+                }
+
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "pixelsPerUnit"));
 
                 var meshTypeProperty = serializedObject.FindProperty(textureSettings + "meshType");
