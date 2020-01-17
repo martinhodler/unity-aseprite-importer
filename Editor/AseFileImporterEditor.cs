@@ -28,6 +28,7 @@ namespace AsepriteImporter
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             var importer = serializedObject.targetObject as AseFileImporter;
             var textureSettings = "textureSettings.";
 
@@ -97,17 +98,15 @@ namespace AsepriteImporter
 
             EditorGUILayout.Space();
 
-            if (importer.animationSettings.Length > 0)
+            SerializedProperty animationSettingsArray = serializedObject.FindProperty("animationSettings");
+            
+            if (animationSettingsArray != null)
             {
-                EditorGUILayout.LabelField("Animation Options", EditorStyles.boldLabel);
+                int arraySize = animationSettingsArray.arraySize;
+
+                for(int i = 0; i < arraySize; i++)
                 {
-                    if (importer.animationSettings != null)
-                    {
-                        foreach (var animationSetting in importer.animationSettings)
-                        {
-                            DrawAnimationSetting(importer, animationSetting);
-                        }
-                    }
+                    DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i));
                 }
             }
 
@@ -125,7 +124,7 @@ namespace AsepriteImporter
                     EditorGUI.indentLevel--;
                 }
             }
-
+            serializedObject.ApplyModifiedProperties();
             base.ApplyRevertGUI();
         }
 
@@ -193,14 +192,16 @@ namespace AsepriteImporter
         }
 
 
-        private void DrawAnimationSetting(AseFileImporter importer, AseFileAnimationSettings setting)
+        private void DrawAnimationSetting(SerializedProperty animationSettings)
         {
-            if (setting.animationName == null)
+            string animationName = animationSettings.FindPropertyRelative("animationName").stringValue;
+            
+            if (animationName == null)
                 return;
 
-            if (!foldoutStates.ContainsKey(setting.animationName))
+            if (!foldoutStates.ContainsKey(animationName))
             {
-                foldoutStates.Add(setting.animationName, false);
+                foldoutStates.Add(animationName, false);
             }
 
             EditorGUILayout.BeginVertical(GUI.skin.box);
@@ -210,12 +211,11 @@ namespace AsepriteImporter
             FontStyle prevoiusFontStyle = foldoutStyle.fontStyle;
             foldoutStyle.fontStyle = FontStyle.Bold;
 
-            if (foldoutStates[setting.animationName] = EditorGUILayout.Foldout(foldoutStates[setting.animationName],
-                setting.animationName, true, foldoutStyle))
+            if (foldoutStates[animationName] = EditorGUILayout.Foldout(foldoutStates[animationName],
+               animationName, true, foldoutStyle))
             {
-                setting.loopTime = EditorGUILayout.Toggle("Loop", setting.loopTime);
-                EditorGUILayout.HelpBox(setting.about, MessageType.None);
-
+                EditorGUILayout.PropertyField(animationSettings.FindPropertyRelative("loopTime"));
+                EditorGUILayout.HelpBox(animationSettings.FindPropertyRelative("about").stringValue, MessageType.None);
             }
 
             foldoutStyle.fontStyle = prevoiusFontStyle;
