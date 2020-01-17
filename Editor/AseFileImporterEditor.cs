@@ -103,7 +103,11 @@ namespace AsepriteImporter
             if (animationSettingsArray != null)
             {
                 int arraySize = animationSettingsArray.arraySize;
-
+                if(arraySize > 0)
+                {
+                    EditorGUILayout.LabelField("Animation Options", EditorStyles.boldLabel);
+                }
+                
                 for(int i = 0; i < arraySize; i++)
                 {
                     DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i));
