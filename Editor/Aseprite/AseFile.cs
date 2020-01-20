@@ -15,6 +15,8 @@ namespace Aseprite
         public Header Header { get; private set; }
         public List<Frame> Frames { get; private set; }
 
+        private Dictionary<Type, Chunk> chunkCache = new Dictionary<Type, Chunk>();
+
         public AseFile(Stream stream)
         {
             BinaryReader reader = new BinaryReader(stream);
@@ -42,6 +44,25 @@ namespace Aseprite
             }
 
             return chunks;
+        }
+
+        public T GetChunk<T>() where T : Chunk
+        {
+            if (!chunkCache.ContainsKey(typeof(T)))
+            {
+                for (int i = 0; i < this.Frames.Count; i++)
+                {
+                    List<T> cs = this.Frames[i].GetChunks<T>();
+
+                    if (cs.Count > 0)
+                    {
+                        chunkCache.Add(typeof(T), cs[0]);
+                        break;
+                    }
+                }
+            }
+
+            return (T)chunkCache[typeof(T)];
         }
 
         public Texture2D[] GetFrames()

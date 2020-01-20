@@ -14,7 +14,7 @@ namespace Aseprite.PixelFormats
 
         public override Color GetColor()
         {
-            PaletteChunk palette = Frame.GetChunk<PaletteChunk>();
+            PaletteChunk palette = Frame.File.GetChunk<PaletteChunk>();
 
             if (palette != null)
                 return palette.GetColor(Index);
