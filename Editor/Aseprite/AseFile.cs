@@ -214,12 +214,20 @@ namespace Aseprite
             int renderRectHeight = Math.Min(canvasHeight, cel.Height);
             Color[] colors = new Color[renderRectWidth * renderRectHeight];
             
-            // Sometimes cell width/height can be larger than image (pixels stored off-screen), adjust our rect to fit canvas viewport
-            
             // If cel offset is positive, displace the same amount on our texture
             int destX = Mathf.Max(0, cel.X);
             int destY = Mathf.Max(0, canvasHeight - cel.Height - cel.Y); // Aseprite is upper left origin, Unity textures are lower left, so perform flip
-            
+
+            // Sometimes cell width/height can be larger than image (pixels stored off-screen), adjust our rect to fit canvas viewport
+            if (renderRectWidth + destX > canvasWidth)
+            {
+                renderRectWidth -= (renderRectWidth + destX) - canvasWidth;
+            }
+            if (renderRectHeight + destY > canvasHeight)
+            {
+                renderRectHeight -= (renderRectHeight + destY) - canvasHeight;
+            }
+
             // If cell offset is negative, displace the same same amount on cel data
             int celX = Mathf.Max(0, -cel.X);
             int celY = Mathf.Max(0, -cel.Y);
