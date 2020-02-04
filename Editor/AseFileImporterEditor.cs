@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace AsepriteImporter
 {
-    [CustomEditor(typeof(AseFileImporter))]
+    [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
     public class AseFileImporterEditor : ScriptedImporterEditor
     {
 
