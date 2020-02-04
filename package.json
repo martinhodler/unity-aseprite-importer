@@ -6,5 +6,10 @@
   "description": "An aseprite-file importer for unity written in C#, built upon the experimental AssetImporter API.",
   "keywords": [ "Experimental", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
   "category": "Importers",
-  "dependencies": {}
+  "dependencies": {},
+  "author": {
+    "name": "Martin hodler",
+    "email": "contact@tinu.io",
+    "url": "https://tinu.io"
+  }
 }
