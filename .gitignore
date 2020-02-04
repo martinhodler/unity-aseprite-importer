@@ -35,5 +35,9 @@ sysinfo.txt
 *.apk
 *.unitypackage
 
-# Metafiles (Not needed for distribution of Aseprite Importer)
-*.meta
+# Ignore not unnecessary meta-files
+README.md.meta
+LICENSE.meta
+Github.meta
+Github/**.meta
+package.json.meta
