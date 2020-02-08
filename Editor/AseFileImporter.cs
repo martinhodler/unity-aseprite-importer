@@ -6,6 +6,9 @@ using Aseprite;
 using UnityEditor;
 using Aseprite.Chunks;
 using System.Text;
+using UnityEditor.U2D.Sprites;
+using System;
+using AsepriteImporter.DataProviders;
 
 namespace AsepriteImporter
 {
@@ -17,115 +20,243 @@ namespace AsepriteImporter
     }
 
     [ScriptedImporter(1, new []{ "ase", "aseprite" })]
-    public class AseFileImporter : ScriptedImporter
+    public class AseFileImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
-        [SerializeField] public AseFileTextureSettings textureSettings = new AseFileTextureSettings();
+        [SerializeField] public AsepriteTextureImportSettings textureImporterSettings;
         [SerializeField] public AseFileAnimationSettings[] animationSettings;
         [SerializeField] public Texture2D atlas;
-        [SerializeField] public AseFileImportType importType;
+        //[SerializeField] public AseFileImportType importType;
+        [SerializeField] private bool generateAnimations;
+        [SerializeField] private string animationImportPath;
+
+        [SerializeField] private Texture2D texture;
+        [SerializeField] private Texture2D thumbnail;
+        
+        [SerializeField] private AseFileSpriteImportData[] spriteImportData;
+
+        [SerializeField] private int frameCount;
+        [SerializeField] private int textureWidth;
+        [SerializeField] private int textureHeight;
+
+        public Texture2D Texture => texture;
+        public Texture2D Thumbnail => thumbnail;
+
+        public AseFileSpriteImportData[] SpriteImportData => spriteImportData;
+
+        public SpriteImportMode spriteImportMode => (SpriteImportMode)textureImporterSettings.spriteMode;
+
+        public float pixelsPerUnit => textureImporterSettings.spritePixelsPerUnit;
+
+        public UnityEngine.Object targetObject => this;
+
+
+
+        private AseFile _aseFile;
+        private SpriteRect[] _spriteRects;
+        [SerializeField] private Sprite[] sprites;
+
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            name = GetFileName(ctx.assetPath);
+            name = GetFileName(assetPath);
+            _aseFile = ReadAseFile(assetPath);
 
-            AseFile aseFile = ReadAseFile(ctx.assetPath);
-            int frameCount = aseFile.Header.Frames;
+            GenerateAtlasTexture();
 
-            SpriteAtlasBuilder atlasBuilder = new SpriteAtlasBuilder(textureSettings, aseFile.Header.Width, aseFile.Header.Height);
-
-            Texture2D[] frames = null;
-            if (importType != AseFileImportType.LayerToSprite)
-                frames = aseFile.GetFrames();
-            else
-                frames = aseFile.GetLayersAsFrames();
-            
-            SpriteImportData[] spriteImportData = new SpriteImportData[0];
-
-            //if (textureSettings.transparentMask)
-            //{
-            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentColor, false);
-            //}
-            //else
-            //{
-            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
-
-            //}
-
-            atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentMask, false);
-
-
-            atlas.filterMode = textureSettings.filterMode;
-            atlas.alphaIsTransparency = false;
-            atlas.wrapMode = TextureWrapMode.Clamp;
-            atlas.name = "Texture";
-
-            ctx.AddObjectToAsset("Texture", atlas);
-
-            ctx.SetMainObject(atlas);
-
-            switch (importType)
+            if (spriteImportData == null || spriteImportData.Length == 0)
             {
-                case AseFileImportType.LayerToSprite:
-                case AseFileImportType.Sprite:
-                    ImportSprites(ctx, aseFile, spriteImportData);
-                    break;
-                case AseFileImportType.Tileset:
-                    ImportTileset(ctx, atlas);
-                    break;
+                SetSingleSpriteImportData();
             }
 
-            ctx.SetMainObject(atlas);
-        }
+            ProcessAnimationSettings();
 
-        private void ImportSprites(AssetImportContext ctx, AseFile aseFile, SpriteImportData[] spriteImportData)
-        {
-            int spriteCount = spriteImportData.Length;
-            
-            
-            Sprite[] sprites = new Sprite[spriteCount];
+            GenerateTexture(ctx.assetPath);
 
-            for (int i = 0; i < spriteCount; i++)
+            ApplySpritesToAnimation();
+
+            ctx.AddObjectToAsset("Texture", texture);
+            ctx.SetMainObject(texture);
+
+            foreach (Sprite sprite in sprites)
             {
-                Sprite sprite = Sprite.Create(atlas,
-                    spriteImportData[i].rect,
-                    spriteImportData[i].pivot, textureSettings.pixelsPerUnit, textureSettings.extrudeEdges,
-                    textureSettings.meshType, spriteImportData[i].border, textureSettings.generatePhysics);
-                sprite.name = string.Format("{0}_{1}", name, spriteImportData[i].name);
-
                 ctx.AddObjectToAsset(sprite.name, sprite);
-                sprites[i] = sprite;
             }
 
-            GenerateAnimations(ctx, aseFile, sprites);
-        }
 
-        private void ImportTileset(AssetImportContext ctx, Texture2D atlas)
-        {
-            int cols = atlas.width / textureSettings.tileSize.x;
-            int rows = atlas.height / textureSettings.tileSize.y;
-
-            int width = textureSettings.tileSize.x;
-            int height = textureSettings.tileSize.y;
-
-            int index = 0;
-
-            for (int y = rows - 1; y >= 0; y--)
+            if (generateAnimations)
             {
-                for (int x = 0; x < cols; x++)
+                AnimationImporter animationImporter = new AnimationImporter(_aseFile);
+                AnimationClip[] animations = animationImporter.GenerateAnimations(name, animationSettings);
+
+                foreach (AnimationClip clip in animations)
                 {
-                    Rect tileRect = new Rect(x * width, y * height, width, height);
-
-                    Sprite sprite = Sprite.Create(atlas, tileRect, textureSettings.spritePivot,
-                        textureSettings.pixelsPerUnit, textureSettings.extrudeEdges, textureSettings.meshType,
-                        Vector4.zero, textureSettings.generatePhysics);
-                    sprite.name = string.Format("{0}_{1}", name, index);
-
-                    ctx.AddObjectToAsset(sprite.name, sprite);
-
-                    index++;
+                    //AssetDatabase.CreateAsset(clip, GetPath(assetPath) + clip.name + ".asset");
+                    ctx.AddObjectToAsset(clip.name, clip);
                 }
             }
         }
+
+        public void SetSingleSpriteImportData()
+        {
+            Rect spriteRect = new Rect(0, 0, textureWidth, textureHeight);
+            spriteImportData = new AseFileSpriteImportData[]
+            {
+                    new AseFileSpriteImportData()
+                    {
+                        alignment = SpriteAlignment.Center,
+                        border = Vector4.zero,
+                        name = name,
+                        outline = SpriteAtlasBuilder.GenerateRectOutline(spriteRect),
+                        pivot = new Vector2(0.5f, 0.5f),
+                        rect = spriteRect,
+                        spriteID = GUID.Generate().ToString(),
+                        tessellationDetail = 0
+                    }
+            };
+        }
+
+        private void GenerateTexture(string assetPath)
+        {
+            SourceTextureInformation textureInformation = new SourceTextureInformation()
+            {
+                containsAlpha = true,
+                hdr = false,
+                height = textureHeight,
+                width = textureWidth
+            };
+
+            TextureImporterPlatformSettings platformSettings = new TextureImporterPlatformSettings()
+            {
+                overridden = false
+            };
+
+            TextureGenerationSettings settings = new TextureGenerationSettings()
+            {
+                assetPath = assetPath,
+                spriteImportData = ConvertAseFileSpriteImportDataToUnity(this.spriteImportData),
+                textureImporterSettings = textureImporterSettings.ToImporterSettings(),
+                enablePostProcessor = false,
+                sourceTextureInformation = textureInformation,
+                qualifyForSpritePacking = true,
+                platformSettings = platformSettings,
+                spritePackingTag = "aseprite",
+                secondarySpriteTextures = new SecondarySpriteTexture[0]
+
+            };
+
+
+            TextureGenerationOutput output = TextureGenerator.GenerateTexture(settings, new Unity.Collections.NativeArray<Color32>(atlas.GetPixels32(), Unity.Collections.Allocator.Temp));
+
+            texture = output.texture;
+            thumbnail = output.thumbNail;
+            sprites = output.sprites;
+        }
+
+        public void GenerateAtlasTexture(bool overwriteSprites = false)
+        {
+            if (atlas != null)
+                return;
+
+            if (_aseFile == null)
+                _aseFile = ReadAseFile(assetPath);
+
+            SpriteAtlasBuilder atlasBuilder = new SpriteAtlasBuilder(_aseFile.Header.Width, _aseFile.Header.Height);
+
+            Texture2D[] frames = _aseFile.GetFrames();
+
+            atlas = atlasBuilder.GenerateAtlas(frames, out AseFileSpriteImportData[] importData);
+
+            textureWidth = atlas.width;
+            textureHeight = atlas.height;
+            frameCount = importData.Length;
+
+            // Rename sprites
+
+            if (overwriteSprites)
+            {
+                for (int i = 0; i < importData.Length; i++)
+                {
+                    importData[i].name = string.Format("{0}_{1}", name, importData[i].name);
+                }
+
+                this._spriteRects = new SpriteRect[0];
+                this.spriteImportData = importData;
+
+                if (spriteImportData.Length > 1)
+                    this.textureImporterSettings.spriteMode = (int)SpriteImportMode.Multiple;
+
+
+                AssetDatabase.WriteImportSettingsIfDirty(assetPath);
+            }
+        }
+
+        private void ProcessAnimationSettings()
+        {
+            AnimationImporter animationImporter = new AnimationImporter(_aseFile);
+
+            if (animationSettings == null || animationSettings.Length == 0)
+            {
+                animationSettings = animationImporter.GetAnimationImportSettings();
+            }
+            else
+            {
+                AseFileAnimationSettings[] settings = animationImporter.GetAnimationImportSettings();
+
+                List<AseFileAnimationSettings> newSettings = new List<AseFileAnimationSettings>();
+                foreach (var setting in settings)
+                {
+                    var currentSetting = Array.Find(animationSettings, s => s.animationName == setting.animationName);
+
+                    if (currentSetting != null)
+                    {
+                        // Settings already exist
+                        newSettings.Add(currentSetting);
+                    }
+                    else
+                    {
+                        // New Settings
+                        newSettings.Add(setting);
+                    }
+                }
+
+                animationSettings = newSettings.ToArray();
+            }
+        }
+
+        private void ApplySpritesToAnimation()
+        {
+            if (sprites.Length != frameCount)
+                return;
+
+
+            for (int i = 0; i < animationSettings.Length; i++)
+            {
+                var settings = animationSettings[i];
+
+                for (int n = 0; n < settings.sprites.Length; n++)
+                {
+                    if (settings.sprites[n] == null)
+                        settings.sprites[n] = sprites[settings.frameNumbers[n]];
+                }
+
+            }
+            /*
+            for (int i = 0; i < animationSettings.Length; i++)
+            {
+                var settings = animationSettings[i];
+
+                Dictionary<int, Sprite> animationSprites = new Dictionary<int, Sprite>();
+
+                for (int n = 0; n < settings.sprites.Length; n++)
+                {
+                    if (settings.sprites[n] != null)
+                        animationSprites.Add(settings.frameNumbers[n], settings.sprites[n]);
+                }
+
+            }
+            */
+        }
+
 
         private string GetFileName(string assetPath)
         {
@@ -133,6 +264,14 @@ namespace AsepriteImporter
             string filename = parts[parts.Length - 1];
 
             return filename.Substring(0, filename.LastIndexOf('.'));
+        }
+
+        private string GetPath(string assetPath)
+        {
+            string[] parts = assetPath.Split('/');
+            string filename = parts[parts.Length - 1];
+
+            return assetPath.Replace(filename, "");
         }
 
         private static AseFile ReadAseFile(string assetPath)
@@ -144,156 +283,144 @@ namespace AsepriteImporter
             return aseFile;
         }
 
-        private void GenerateAnimations(AssetImportContext ctx, AseFile aseFile, Sprite[] sprites)
+        
+
+
+
+
+
+        private AsepriteTextureDataProvider textureDataProvider;
+        private AsepriteOutlineDataProvider outlineDataProvider;
+
+
+        public SpriteRect[] GetSpriteRects()
         {
-            if (animationSettings == null)
-                animationSettings = new AseFileAnimationSettings[0];
+            List<SpriteRect> spriteRects = new List<SpriteRect>();
 
-            var animSettings = new List<AseFileAnimationSettings>(animationSettings);
-            var animations = aseFile.GetAnimations();
-
-            if (animations.Length <= 0)
-                return;
-
-            if (animationSettings != null)
-                RemoveUnusedAnimationSettings(animSettings, animations);
-
-            int index = 0;
-
-            foreach (var animation in animations)
+            foreach (AseFileSpriteImportData importData in spriteImportData)
             {
-                AnimationClip animationClip = new AnimationClip();
-                animationClip.name = name + "_" + animation.TagName;
-                animationClip.frameRate = 25;
-
-                AseFileAnimationSettings importSettings = GetAnimationSettingFor(animSettings, animation);
-                importSettings.about = GetAnimationAbout(animation);
-
-
-                EditorCurveBinding spriteBinding = new EditorCurveBinding();
-                spriteBinding.type = typeof(SpriteRenderer);
-                spriteBinding.path = "";
-                spriteBinding.propertyName = "m_Sprite";
-
-
-                int length = animation.FrameTo - animation.FrameFrom + 1;
-                ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length + 1]; // plus last frame to keep the duration
-
-                float time = 0;
-
-                int from = (animation.Animation != LoopAnimation.Reverse) ? animation.FrameFrom : animation.FrameTo;
-                int step = (animation.Animation != LoopAnimation.Reverse) ? 1 : -1;
-
-                int keyIndex = from;
-
-                for (int i = 0; i < length; i++)
+                spriteRects.Add(new SpriteRect()
                 {
-                    if (i >= length)
+                    spriteID = ConvertStringToGUID(importData.spriteID),
+                    alignment = importData.alignment,
+                    border = importData.border,
+                    name = importData.name,
+                    pivot = importData.pivot,
+                    rect = importData.rect
+                });
+            }
+
+            this._spriteRects = spriteRects.ToArray();
+            return this._spriteRects;
+        }
+
+        public void SetSpriteRects(SpriteRect[] spriteRects)
+        {
+            this._spriteRects = spriteRects;
+        }
+
+        public void Apply()
+        {
+            if (_spriteRects != null && _spriteRects.Length > 0)
+            {
+                List<AseFileSpriteImportData> newImportData = new List<AseFileSpriteImportData>();
+
+                foreach (SpriteRect spriteRect in _spriteRects)
+                {
+                    AseFileSpriteImportData data = new AseFileSpriteImportData()
                     {
-                        keyIndex = from;
+                        alignment = spriteRect.alignment,
+                        border = spriteRect.border,
+                        name = spriteRect.name,
+                        pivot = spriteRect.pivot,
+                        rect = spriteRect.rect,
+                        spriteID = spriteRect.spriteID.ToString()
+                    };
+
+                    AseFileSpriteImportData current = Array.Find<AseFileSpriteImportData>(spriteImportData, d => d.spriteID == spriteRect.spriteID.ToString());
+
+                    if (current != null)
+                    {
+                        data.outline = current.outline;
+                        data.tessellationDetail = current.tessellationDetail;
+                    }
+                    else
+                    {
+                        data.outline = SpriteAtlasBuilder.GenerateRectOutline(data.rect);
+                        data.tessellationDetail = 0;
                     }
 
-
-                    ObjectReferenceKeyframe frame = new ObjectReferenceKeyframe();
-                    frame.time = time;
-                    frame.value = sprites[keyIndex];
-
-                    time += aseFile.Frames[keyIndex].FrameDuration / 1000f;
-
-                    keyIndex += step;
-                    spriteKeyFrames[i] = frame;
+                    newImportData.Add(data);
                 }
 
-                float frameTime = 1f / animationClip.frameRate;
+                _spriteRects = new SpriteRect[0];
 
-                ObjectReferenceKeyframe lastFrame = new ObjectReferenceKeyframe();
-                lastFrame.time = time - frameTime;
-                lastFrame.value = sprites[keyIndex - step];
-
-                spriteKeyFrames[spriteKeyFrames.Length - 1] = lastFrame;
-
-
-                AnimationUtility.SetObjectReferenceCurve(animationClip, spriteBinding, spriteKeyFrames);
-                AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(animationClip);
-
-                switch (animation.Animation)
-                {
-                    case LoopAnimation.Forward:
-                        animationClip.wrapMode = WrapMode.Loop;
-                        settings.loopTime = true;
-                        break;
-                    case LoopAnimation.Reverse:
-                        animationClip.wrapMode = WrapMode.Loop;
-                        settings.loopTime = true;
-                        break;
-                    case LoopAnimation.PingPong:
-                        animationClip.wrapMode = WrapMode.PingPong;
-                        settings.loopTime = true;
-                        break;
-                }
-
-                if (!importSettings.loopTime)
-                {
-                    animationClip.wrapMode = WrapMode.Once;
-                    settings.loopTime = false;
-                }
-
-                AnimationUtility.SetAnimationClipSettings(animationClip, settings);
-                ctx.AddObjectToAsset(animation.TagName, animationClip);
-
-                index++;
+                this.spriteImportData = newImportData.ToArray();
+                EditorUtility.SetDirty(this);
             }
 
-            animationSettings = animSettings.ToArray();
+            AssetDatabase.WriteImportSettingsIfDirty(assetPath);
+            SaveAndReimport();
+
+            AssetDatabase.Refresh();
+            AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            EditorApplication.RepaintProjectWindow();
         }
 
-        private void RemoveUnusedAnimationSettings(List<AseFileAnimationSettings> animationSettings,
-            FrameTag[] animations)
+        public void InitSpriteEditorDataProvider()
         {
-            for (int i = 0; i < animationSettings.Count; i++)
+            textureDataProvider = new AsepriteTextureDataProvider(this);
+            outlineDataProvider = new AsepriteOutlineDataProvider(this);
+        }
+
+        public T GetDataProvider<T>() where T : class
+        {
+            if (typeof(T).Equals(typeof(ITextureDataProvider)))
+                return textureDataProvider as T;
+
+            if (typeof(T).Equals(typeof(ISpriteOutlineDataProvider)))
+                return outlineDataProvider as T;
+
+            if (typeof(T).Equals(typeof(ISpriteEditorDataProvider)))
+                return this as T;
+
+                Debug.Log(typeof(T).Name + " not found");
+            return null;
+        }
+
+        public bool HasDataProvider(Type type)
+        {
+
+            if (type == typeof(ITextureDataProvider))
+                return true;
+
+            if (type == typeof(ISpriteOutlineDataProvider))
+                return true;
+
+            //Debug.Log("Does not support" + type.Name);
+            return false;
+        }
+
+        private GUID ConvertStringToGUID(string guidString)
+        {
+            if (!GUID.TryParse(guidString, out GUID guid))
             {
-                bool found = false;
-                if (animationSettings[i] != null)
-                {
-                    foreach (var anim in animations)
-                    {
-                        if (animationSettings[i].animationName == anim.TagName)
-                            found = true;
-                    }
-                }
-
-                if (!found)
-                {
-                    animationSettings.RemoveAt(i);
-                    i--;
-                }
+                guid = GUID.Generate();
             }
+
+            return guid;
         }
 
-        public AseFileAnimationSettings GetAnimationSettingFor(List<AseFileAnimationSettings> animationSettings,
-            FrameTag animation)
+        private static SpriteImportData[] ConvertAseFileSpriteImportDataToUnity(AseFileSpriteImportData[] spriteImportData)
         {
-            if (animationSettings == null)
-                animationSettings = new List<AseFileAnimationSettings>();
+            SpriteImportData[] importData = new SpriteImportData[spriteImportData.Length];
 
-            for (int i = 0; i < animationSettings.Count; i++)
+            for (int i = 0; i < spriteImportData.Length; i++)
             {
-                if (animationSettings[i].animationName == animation.TagName)
-                    return animationSettings[i];
+                importData[i] = spriteImportData[i].ToSpriteImportData();
             }
 
-            animationSettings.Add(new AseFileAnimationSettings(animation.TagName));
-            return animationSettings[animationSettings.Count - 1];
-        }
-
-        private string GetAnimationAbout(FrameTag animation)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat("Animation Type:\t{0}", animation.Animation.ToString());
-            sb.AppendLine();
-            sb.AppendFormat("Animation:\tFrom: {0}; To: {1}", animation.FrameFrom, animation.FrameTo);
-
-            return sb.ToString();
+            return importData;
         }
     }
 }

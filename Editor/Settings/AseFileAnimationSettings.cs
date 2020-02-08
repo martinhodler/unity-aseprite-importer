@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace AsepriteImporter
 {
@@ -18,6 +19,8 @@ namespace AsepriteImporter
         [SerializeField] public string animationName;
         [SerializeField] public bool loopTime = true;
         [SerializeField] public string about;
+        [SerializeField] public Sprite[] sprites;
+        [SerializeField] public int[] frameNumbers;
 
         public override string ToString()
         {

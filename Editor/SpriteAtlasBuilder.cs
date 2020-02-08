@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Aseprite.Utils;
+using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
@@ -9,32 +10,105 @@ namespace AsepriteImporter
     public class SpriteAtlasBuilder
     {
         private readonly Vector2Int spriteSize = Vector2Int.zero;
-        private AseFileTextureSettings textureSettings;
+
         
-        public SpriteAtlasBuilder(AseFileTextureSettings textureSettings)
+        public SpriteAtlasBuilder()
         {
             spriteSize = new Vector2Int(16, 16);
-            this.textureSettings = textureSettings;
         }
 
-        public SpriteAtlasBuilder(AseFileTextureSettings textureSettings, Vector2Int spriteSize)
+        public SpriteAtlasBuilder(Vector2Int spriteSize)
         {
             this.spriteSize = spriteSize;
-            this.textureSettings = textureSettings;
         }
 
-        public SpriteAtlasBuilder(AseFileTextureSettings textureSettings, int width, int height)
+        public SpriteAtlasBuilder(int width, int height)
         {
             spriteSize = new Vector2Int(width, height);
-            this.textureSettings = textureSettings;
         }
 
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, bool mask, bool baseTwo = true)
+        public Texture2D GenerateAtlas(Texture2D[] sprites, out AseFileSpriteImportData[] spriteImportData, bool baseTwo = true)
         {
-            var cols = sprites.Length;
-            var rows = 1;
+            int cols, rows;
 
-            float spriteCount = sprites.Length;
+            CalculateColsRows(sprites.Length, spriteSize, out cols, out rows);
+
+            return GenerateAtlas(sprites, cols, rows, out spriteImportData, baseTwo);
+        }
+
+        public Texture2D GenerateAtlas(Texture2D[] sprites, int cols, int rows, out AseFileSpriteImportData[] spriteImportData, bool baseTwo = true)
+        {
+            spriteImportData = new AseFileSpriteImportData[sprites.Length];
+
+            var width = cols * spriteSize.x;
+            var height = rows * spriteSize.y;
+
+            if (baseTwo)
+            {
+                var baseTwoValue = CalculateNextBaseTwoValue(Math.Max(width, height));
+                width = baseTwoValue;
+                height = baseTwoValue;
+            }
+
+            var atlas = Texture2DUtil.CreateTransparentTexture(width, height);
+            var index = 0;
+
+            for (var row = 0; row < rows; row++)
+            {
+                for (var col = 0; col < cols; col++)
+                {
+                    Rect spriteRect = new Rect(col * spriteSize.x, atlas.height - ((row + 1) * spriteSize.y), spriteSize.x, spriteSize.y);
+                    Color[] colors = sprites[index].GetPixels();
+                    atlas.SetPixels((int)spriteRect.x, (int)spriteRect.y, (int)spriteRect.width, (int)spriteRect.height, sprites[index].GetPixels());
+                    atlas.Apply();
+
+                    List<Vector2[]> outline = GenerateRectOutline(spriteRect);
+                    spriteImportData[index] = CreateSpriteImportData(index.ToString(), spriteRect, outline);
+
+                    index++;
+                    if (index >= sprites.Length)
+                        break;
+                }
+                if (index >= sprites.Length)
+                    break;
+            }
+
+            return atlas;
+        }
+
+        public static List<Vector2[]> GenerateRectOutline(Rect rect)
+        {
+            List<Vector2[]> outline = new List<Vector2[]>();
+
+            outline.Add(new Vector2[] { new Vector2(rect.x, rect.y), new Vector2(rect.x, rect.yMax) });
+            outline.Add(new Vector2[] { new Vector2(rect.x, rect.yMax), new Vector2(rect.xMax, rect.yMax) });
+            outline.Add(new Vector2[] { new Vector2(rect.xMax, rect.yMax), new Vector2(rect.xMax, rect.y) });
+            outline.Add(new Vector2[] { new Vector2(rect.xMax, rect.y), new Vector2(rect.x, rect.yMax) });
+
+            return outline;
+        }
+
+        private AseFileSpriteImportData CreateSpriteImportData(string name, Rect rect, List<Vector2[]> outline)
+        {
+            return new AseFileSpriteImportData()
+            {
+                alignment = SpriteAlignment.Center,
+                border = Vector4.zero,
+                name = name,
+                outline = outline,
+                pivot = new Vector2(0.5f, 0.5f),
+                rect = rect,
+                spriteID = GUID.Generate().ToString(),
+                tessellationDetail = 0
+            };
+        }
+
+        private static void CalculateColsRows(int spritesCount, Vector2 spriteSize, out int cols, out int rows)
+        {
+            cols = spritesCount;
+            rows = 1;
+
+            float spriteCount = spritesCount;
 
             var divider = 2;
 
@@ -68,129 +142,6 @@ namespace AsepriteImporter
 
             cols = (int)Math.Ceiling(spriteCount / divider);
             rows = (int)Math.Ceiling(spriteCount / cols);
-
-            if (mask)
-            {
-                return GenerateAtlas(sprites, out spriteData, cols, rows, textureSettings.transparentColor, baseTwo);
-            }
-            else
-            {
-                return GenerateAtlas(sprites, out spriteData, cols, rows, baseTwo);
-            }
-        }
-
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, int cols, int rows, bool baseTwo = true)
-        {
-            var spriteImportData = new List<SpriteImportData>();
-
-            var width = cols * spriteSize.x;
-            var height = rows * spriteSize.y;
-
-            if (baseTwo)
-            {
-                var baseTwoValue = CalculateNextBaseTwoValue(Math.Max(width, height));
-                width = baseTwoValue;
-                height = baseTwoValue;
-            }
-
-            var atlas = Texture2DUtil.CreateTransparentTexture(width, height);
-            var index = 0;
-
-            for (var row = 0; row < rows; row++)
-            {
-                for (var col = 0; col < cols; col++)
-                {
-                    Rect spriteRect = new Rect(col * spriteSize.x, atlas.height - ((row + 1) * spriteSize.y), spriteSize.x, spriteSize.y);
-                    atlas.SetPixels((int)spriteRect.x, (int)spriteRect.y, (int)spriteRect.width, (int)spriteRect.height, sprites[index].GetPixels());
-                    atlas.Apply();
-
-                    var importData = new SpriteImportData
-                    {
-                        rect = spriteRect,
-                        pivot = textureSettings.spritePivot,
-                        border = Vector4.zero,
-                        name = index.ToString()
-                    };
-
-                    spriteImportData.Add(importData);
-
-                    index++;
-                    if (index >= sprites.Length)
-                        break;
-                }
-                if (index >= sprites.Length)
-                    break;
-            }
-
-            spriteData = spriteImportData.ToArray();
-            return atlas;
-        }
-
-        // replaces color to transparent
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, int cols, int rows, Color mask, bool baseTwo = true)
-        {
-            var spriteImportData = new List<SpriteImportData>();
-            
-            var width = cols * spriteSize.x;
-            var height = rows * spriteSize.y;
-
-            if (baseTwo)
-            {
-                var baseTwoValue = CalculateNextBaseTwoValue(Math.Max(width, height));
-                width = baseTwoValue;
-                height = baseTwoValue;
-            }
-
-            // blank transparent canvas
-            var atlas = Texture2DUtil.CreateTransparentTexture(width, height);
-            var index = 0;
-            
-            // step through each pixel
-            for (var row = 0; row < rows; row++)
-            {
-                for (var col = 0; col < cols; col++)
-                {
-                    Rect spriteRect = new Rect(col * spriteSize.x, atlas.height - ((row + 1) * spriteSize.y), spriteSize.x, spriteSize.y);
-
-                    // change pixel mask to transparent
-                    Color[] pixelPallete = ReplaceMaskToTransparent(mask, sprites[index].GetPixels());
-                    atlas.SetPixels((int) spriteRect.x, (int) spriteRect.y, (int) spriteRect.width, (int) spriteRect.height, pixelPallete);
-                    atlas.Apply();
-
-                    var importData = new SpriteImportData
-                    {
-                        rect = spriteRect,
-                        pivot = textureSettings.spritePivot,
-                        border = Vector4.zero,
-                        name = index.ToString()
-                    };
-
-                    spriteImportData.Add(importData);
-                    
-                    index++;
-                    if (index >= sprites.Length)
-                        break;
-                }
-                if (index >= sprites.Length)
-                    break;
-            }
-
-            spriteData = spriteImportData.ToArray();
-            return atlas;
-        }
-
-        // step and replace all mask instances to clear
-        private static Color[] ReplaceMaskToTransparent(Color mask, Color[] pallete)
-        {
-            for(int i = 0; i < pallete.Length; i++)
-            {
-                if(pallete[i] == mask)
-                {
-                    pallete[i] = UnityEngine.Color.clear;
-                }
-            }
-           
-            return pallete;
         }
 
         private static int CalculateNextBaseTwoValue(int value)
