@@ -10,7 +10,6 @@ Import the ```unity-aseprite-importer``` folder into your project's Packages fol
 ![Demo GIF of AsepriteImporter](GitHub/aseprite-importer-demo.gif)
 ![Demo Transparency Masking of AsepriteImporter](GitHub/aseprite-transparency-demo.gif)
 
-[![PayPal](https://www.paypalobjects.com/en_US/CH/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JNDPF8VN5GTCY&source=url)
 
 ## License
 
