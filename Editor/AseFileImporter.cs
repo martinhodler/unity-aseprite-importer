@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor.Experimental.AssetImporters;
 using System.IO;
 using Aseprite;
@@ -23,6 +24,7 @@ namespace AsepriteImporter
         [SerializeField] public AseFileAnimationSettings[] animationSettings;
         [SerializeField] public Texture2D atlas;
         [SerializeField] public AseFileImportType importType;
+        [SerializeField] public bool bindToImage;
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
@@ -170,10 +172,10 @@ namespace AsepriteImporter
                 importSettings.about = GetAnimationAbout(animation);
 
 
-                EditorCurveBinding spriteBinding = new EditorCurveBinding();
-                spriteBinding.type = typeof(SpriteRenderer);
-                spriteBinding.path = "";
-                spriteBinding.propertyName = "m_Sprite";
+                EditorCurveBinding editorBinding = new EditorCurveBinding();
+                editorBinding.type = bindToImage ? typeof(Image) : typeof(SpriteRenderer);
+                editorBinding.path = "";
+                editorBinding.propertyName = "m_Sprite";
 
 
                 int length = animation.FrameTo - animation.FrameFrom + 1;
@@ -213,7 +215,7 @@ namespace AsepriteImporter
                 spriteKeyFrames[spriteKeyFrames.Length - 1] = lastFrame;
 
 
-                AnimationUtility.SetObjectReferenceCurve(animationClip, spriteBinding, spriteKeyFrames);
+                AnimationUtility.SetObjectReferenceCurve(animationClip, editorBinding, spriteKeyFrames);
                 AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(animationClip);
 
                 switch (animation.Animation)

@@ -83,6 +83,8 @@ namespace AsepriteImporter
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "generatePhysics"));
 
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("bindToImage"));
+
 
                 EditorGUILayout.Space();
 
