@@ -83,8 +83,15 @@ namespace AsepriteImporter
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "generatePhysics"));
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("bindToImage"));
+                var editorBindingProperty = serializedObject.FindProperty("bindType");
+                var editorBinding = (AseEditorBindType) editorBindingProperty.intValue;
 
+                EditorGUI.BeginChangeCheck();
+                editorBinding = (AseEditorBindType) EditorGUILayout.EnumPopup("Component to Bind", editorBinding);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    editorBindingProperty.intValue = (int) editorBinding;
+                }
 
                 EditorGUILayout.Space();
 

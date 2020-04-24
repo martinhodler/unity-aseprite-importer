@@ -17,6 +17,12 @@ namespace AsepriteImporter
         LayerToSprite
     }
 
+    public enum AseEditorBindType
+    {
+        SpriteRenderer,
+        UIImage
+    }
+
     [ScriptedImporter(1, new []{ "ase", "aseprite" })]
     public class AseFileImporter : ScriptedImporter
     {
@@ -24,7 +30,7 @@ namespace AsepriteImporter
         [SerializeField] public AseFileAnimationSettings[] animationSettings;
         [SerializeField] public Texture2D atlas;
         [SerializeField] public AseFileImportType importType;
-        [SerializeField] public bool bindToImage;
+        [SerializeField] public AseEditorBindType bindType;
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
@@ -173,9 +179,18 @@ namespace AsepriteImporter
 
 
                 EditorCurveBinding editorBinding = new EditorCurveBinding();
-                editorBinding.type = bindToImage ? typeof(Image) : typeof(SpriteRenderer);
                 editorBinding.path = "";
                 editorBinding.propertyName = "m_Sprite";
+
+                switch (bindType)
+                {
+                    case AseEditorBindType.SpriteRenderer:
+                        editorBinding.type = typeof(SpriteRenderer);
+                        break;
+                    case AseEditorBindType.UIImage:
+                        editorBinding.type = typeof(Image);
+                        break;
+                }
 
 
                 int length = animation.FrameTo - animation.FrameFrom + 1;
