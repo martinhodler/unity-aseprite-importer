@@ -8,7 +8,6 @@ namespace AsepriteImporter
     [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
     public class AseFileImporterEditor : ScriptedImporterEditor
     {
-
         private string[] importTypes = new string[] {"Sprite", "Tileset (Grid)", "Layer To Sprite"};
 
         private string[] spritePivotOptions = new string[]
@@ -50,8 +49,10 @@ namespace AsepriteImporter
                 var transparentColor = serializedObject.FindProperty(textureSettings + "transparentColor");
 
                 Rect lastRect = GUILayoutUtility.GetLastRect();
-                Rect resetButton = new Rect(EditorGUIUtility.labelWidth + 50, lastRect.y + EditorGUIUtility.singleLineHeight, 60, 18);
-                if (GUI.Button(resetButton, "Reset")){
+                Rect resetButton = new Rect(EditorGUIUtility.labelWidth + 50,
+                    lastRect.y + EditorGUIUtility.singleLineHeight, 60, 18);
+                if (GUI.Button(resetButton, "Reset"))
+                {
                     transparentColor.colorValue = Color.magenta;
                 }
 
@@ -59,10 +60,23 @@ namespace AsepriteImporter
                 if (transparentColorMask.boolValue)
                 {
                     EditorGUILayout.PropertyField(transparentColor);
-                    
                 }
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "pixelsPerUnit"));
+
+                if (importTypeProperty.intValue == (int) AseFileImportType.Sprite)
+                {
+                    // Mirror
+                    var mirrorProperty = serializedObject.FindProperty(textureSettings + "mirror");
+                    var mirror = (MirrorOption) mirrorProperty.enumValueIndex;
+
+                    EditorGUI.BeginChangeCheck();
+                    mirror = (MirrorOption) EditorGUILayout.EnumPopup("Mirror", mirror);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        mirrorProperty.enumValueIndex = (int) mirror;
+                    }
+                }
 
                 var meshTypeProperty = serializedObject.FindProperty(textureSettings + "meshType");
                 var meshType = (SpriteMeshType) meshTypeProperty.intValue;
@@ -95,20 +109,19 @@ namespace AsepriteImporter
             }
 
 
-
             EditorGUILayout.Space();
 
             SerializedProperty animationSettingsArray = serializedObject.FindProperty("animationSettings");
-            
+
             if (animationSettingsArray != null)
             {
                 int arraySize = animationSettingsArray.arraySize;
-                if(arraySize > 0)
+                if (arraySize > 0)
                 {
                     EditorGUILayout.LabelField("Animation Options", EditorStyles.boldLabel);
                 }
-                
-                for(int i = 0; i < arraySize; i++)
+
+                for (int i = 0; i < arraySize; i++)
                 {
                     DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i));
                 }
@@ -128,6 +141,7 @@ namespace AsepriteImporter
                     EditorGUI.indentLevel--;
                 }
             }
+
             serializedObject.ApplyModifiedProperties();
             base.ApplyRevertGUI();
         }
@@ -199,7 +213,7 @@ namespace AsepriteImporter
         private void DrawAnimationSetting(SerializedProperty animationSettings)
         {
             string animationName = animationSettings.FindPropertyRelative("animationName").stringValue;
-            
+
             if (animationName == null)
                 return;
 
@@ -216,7 +230,7 @@ namespace AsepriteImporter
             foldoutStyle.fontStyle = FontStyle.Bold;
 
             if (foldoutStates[animationName] = EditorGUILayout.Foldout(foldoutStates[animationName],
-               animationName, true, foldoutStyle))
+                animationName, true, foldoutStyle))
             {
                 EditorGUILayout.PropertyField(animationSettings.FindPropertyRelative("loopTime"));
                 EditorGUILayout.HelpBox(animationSettings.FindPropertyRelative("about").stringValue, MessageType.None);
