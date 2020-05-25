@@ -109,10 +109,25 @@ namespace AsepriteImporter
 
                 EditorGUILayout.Space();
 
-                importer.textureSettings.wrapMode =
-                    (TextureWrapMode) EditorGUILayout.EnumPopup("Wrap Mode", importer.textureSettings.wrapMode);
-                importer.textureSettings.filterMode =
-                    (FilterMode) EditorGUILayout.EnumPopup("Filter Mode", importer.textureSettings.filterMode);
+                var wrapModeProperty = serializedObject.FindProperty(textureSettings + "wrapMode");
+                var wrapMode = (TextureWrapMode) wrapModeProperty.intValue;
+
+                EditorGUI.BeginChangeCheck();
+                wrapMode = (TextureWrapMode) EditorGUILayout.EnumPopup("Wrap Mode", wrapMode);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    wrapModeProperty.intValue = (int) wrapMode;
+                }
+
+                var filterModeProperty = serializedObject.FindProperty(textureSettings + "filterMode");
+                var filterMode = (FilterMode) filterModeProperty.intValue;
+
+                EditorGUI.BeginChangeCheck();
+                filterMode = (FilterMode) EditorGUILayout.EnumPopup("Filter Mode", filterMode);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    filterModeProperty.intValue = (int) filterMode;
+                }
 
                 EditorGUI.indentLevel--;
             }
