@@ -46,7 +46,7 @@ namespace AsepriteImporter
                 frames = aseFile.GetFrames();
             else
                 frames = aseFile.GetLayersAsFrames();
-            
+
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
 
             //if (textureSettings.transparentMask)
@@ -64,7 +64,7 @@ namespace AsepriteImporter
 
             atlas.filterMode = textureSettings.filterMode;
             atlas.alphaIsTransparency = false;
-            atlas.wrapMode = TextureWrapMode.Clamp;
+            atlas.wrapMode = textureSettings.wrapMode;
             atlas.name = "Texture";
 
             ctx.AddObjectToAsset("Texture", atlas);
@@ -88,8 +88,8 @@ namespace AsepriteImporter
         private void ImportSprites(AssetImportContext ctx, AseFile aseFile, SpriteImportData[] spriteImportData)
         {
             int spriteCount = spriteImportData.Length;
-            
-            
+
+
             Sprite[] sprites = new Sprite[spriteCount];
 
             for (int i = 0; i < spriteCount; i++)
