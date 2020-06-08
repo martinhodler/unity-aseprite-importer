@@ -11,13 +11,20 @@ namespace AsepriteImporter
         Y
     }
 
+    public enum TransparencyMode
+    {
+        Disabled,
+        Alpha,
+        Mask
+    }
+
     [System.Serializable]
     public class AseFileTextureSettings
     {
         [SerializeField] public TextureImporterType textureType = TextureImporterType.Sprite;
         [SerializeField] public int pixelsPerUnit = 32;
         [SerializeField] public MirrorOption mirror = MirrorOption.None;
-        [SerializeField] public bool transparentMask = false;
+        [SerializeField] public TransparencyMode transparencyMode = TransparencyMode.Disabled;
         [SerializeField] public Color transparentColor = Color.magenta;
         [SerializeField] public SpriteMeshType meshType = SpriteMeshType.Tight;
         [Range(0, 32)] [SerializeField] public uint extrudeEdges = 1;
