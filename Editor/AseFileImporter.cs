@@ -9,6 +9,7 @@ using System.Text;
 using UnityEditor.U2D.Sprites;
 using System;
 using AsepriteImporter.DataProviders;
+using Packages.unity_aseprite_importer.Editor.Settings;
 
 namespace AsepriteImporter
 {
@@ -22,11 +23,13 @@ namespace AsepriteImporter
     [ScriptedImporter(1, new []{ "ase", "aseprite" })]
     public class AseFileImporter : ScriptedImporter, ISpriteEditorDataProvider
     {
+        public AutoGenerationSettings autoGenerationSettings;
         [SerializeField] public AsepriteTextureImportSettings textureImporterSettings;
         [SerializeField] public AseFileAnimationSettings[] animationSettings;
         [SerializeField] public Texture2D atlas;
         //[SerializeField] public AseFileImportType importType;
         [SerializeField] private bool generateAnimations;
+        [SerializeField] private bool createAnimationAssets;
         [SerializeField] private string animationImportPath;
 
         [SerializeField] private Texture2D texture;
@@ -63,7 +66,7 @@ namespace AsepriteImporter
 
             GenerateAtlasTexture();
 
-            if (spriteImportData == null || spriteImportData.Length == 0)
+            if (spriteImportData == null || spriteImportData.Length == 0 || textureImporterSettings.spriteMode == (int)SpriteImportMode.Single)
             {
                 SetSingleSpriteImportData();
             }
@@ -91,15 +94,41 @@ namespace AsepriteImporter
                 foreach (AnimationClip clip in animations)
                 {
                     //AssetDatabase.CreateAsset(clip, GetPath(assetPath) + clip.name + ".asset");
+                    if (clip == null)
+                        continue;
+
                     ctx.AddObjectToAsset(clip.name, clip);
                 }
             }
+
+            //AssetDatabase.ForceReserializeAssets(new string[] { ctx.assetPath });
         }
 
         public void SetSingleSpriteImportData()
         {
             Rect spriteRect = new Rect(0, 0, textureWidth, textureHeight);
             spriteImportData = new AseFileSpriteImportData[]
+            {
+                    new AseFileSpriteImportData()
+                    {
+                        alignment = SpriteAlignment.Center,
+                        border = Vector4.zero,
+                        name = name,
+                        outline = SpriteAtlasBuilder.GenerateRectOutline(spriteRect),
+                        pivot = new Vector2(0.5f, 0.5f),
+                        rect = spriteRect,
+                        spriteID = GUID.Generate().ToString(),
+                        tessellationDetail = 0
+                    }
+            };
+
+            animationSettings = null;
+        }
+
+        public AseFileSpriteImportData[] GetSingleSpriteImportData()
+        {
+            Rect spriteRect = new Rect(0, 0, textureWidth, textureHeight);
+            return new AseFileSpriteImportData[]
             {
                     new AseFileSpriteImportData()
                     {

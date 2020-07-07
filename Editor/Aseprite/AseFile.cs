@@ -196,7 +196,7 @@ namespace Aseprite
                 
                 switch (blendMode)
                 {
-                    case LayerBlendMode.Normal: texture = Texture2DBlender.Normal(texture, celTex); break;
+                    case LayerBlendMode.Normal: texture = Texture2DBlender.Normal(texture, celTex, opacity); break;
                     case LayerBlendMode.Multiply: texture = Texture2DBlender.Multiply(texture, celTex, opacity); break;
                     case LayerBlendMode.Screen: texture = Texture2DBlender.Screen(texture, celTex); break;
                     case LayerBlendMode.Overlay: texture = Texture2DBlender.Overlay(texture, celTex); break;
@@ -229,42 +229,34 @@ namespace Aseprite
             int canvasHeight = Header.Height;
             
             Texture2D texture = Texture2DUtil.CreateTransparentTexture(canvasWidth, canvasHeight);
+            Color[] colors = new Color[canvasWidth * canvasHeight];
 
-            // Only need to render as large as viewport or cel, whichever is smaller
-            int renderRectWidth = Math.Min(canvasWidth, cel.Width);
-            int renderRectHeight = Math.Min(canvasHeight, cel.Height);
-            Color[] colors = new Color[renderRectWidth * renderRectHeight];
-            
-            // If cel offset is positive, displace the same amount on our texture
-            int destX = Mathf.Max(0, cel.X);
-            int destY = Mathf.Max(0, canvasHeight - cel.Height - cel.Y); // Aseprite is upper left origin, Unity textures are lower left, so perform flip
+            int pixelIndex = 0;
+            int celXEnd = cel.Width + cel.X;
+            int celYEnd = cel.Height + cel.Y;
 
-            // Sometimes cell width/height can be larger than image (pixels stored off-screen), adjust our rect to fit canvas viewport
-            if (renderRectWidth + destX > canvasWidth)
+
+            for (int y = cel.Y; y < celYEnd; y++)
             {
-                renderRectWidth -= (renderRectWidth + destX) - canvasWidth;
-            }
-            if (renderRectHeight + destY > canvasHeight)
-            {
-                renderRectHeight -= (renderRectHeight + destY) - canvasHeight;
-            }
-
-            // If cell offset is negative, displace the same same amount on cel data
-            int celX = Mathf.Max(0, -cel.X);
-            int celY = Mathf.Max(0, -cel.Y);
-
-            for (int y = 0; y < renderRectHeight; y++)
-            {
-                for (int x = 0; x < renderRectWidth; x++)
+                if (y < 0 || y >= canvasHeight)
                 {
-                    int celDataIndex = (y + celY) * cel.Width + (x + celX);
-                    int index = (renderRectHeight - 1 - (y)) * renderRectWidth + (x);
+                    pixelIndex += cel.Width;
+                    continue;
+                }
 
-                    colors[index] = cel.RawPixelData[celDataIndex].GetColor();
+                for (int x = cel.X; x < celXEnd; x++)
+                {
+                    if (x >= 0 && x < canvasWidth)
+                    {
+                        int index = (canvasHeight - 1 - y) * canvasWidth + x;
+                        colors[index] = cel.RawPixelData[pixelIndex].GetColor();
+                    }
+
+                    ++pixelIndex;
                 }
             }
 
-            texture.SetPixels(destX, destY, renderRectWidth, renderRectHeight, colors);
+            texture.SetPixels(0, 0, canvasWidth, canvasHeight, colors);
             texture.Apply();
 
             return texture;

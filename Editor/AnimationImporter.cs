@@ -71,6 +71,8 @@ namespace AsepriteImporter
                 if (importSettings == null)
                     continue;
 
+                if (importSettings.HasInvalidSprites)
+                    continue;
 
                 AnimationClip animationClip = new AnimationClip
                 {

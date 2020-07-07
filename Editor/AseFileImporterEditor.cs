@@ -12,6 +12,7 @@ namespace AsepriteImporter
     {
         private const int BUTTON_RESET_WIDTH = 55;
         private const string TEXTURE_SETTINGS_PATH = "textureImporterSettings.";
+        private const string AUTO_GEMERATION_SETTINGS_PATH = "autoGenerationSettings.";
 
         private const string FOLDOUT_TEXTURE_ADVANCED = "textureSettingsAdvanced";
 
@@ -32,6 +33,12 @@ namespace AsepriteImporter
             HDRI = 12,
             SingleChannel = 13
         }
+
+        private readonly Dictionary<int, string> mappingGenerationType = new Dictionary<int, string>
+        {
+            { 0, "Sprite" },
+            //{ 1, "Tilemap (Grid)" },
+        };
 
         private readonly Dictionary<int, string> mappingTextureImportTypes = new Dictionary<int, string>
         {
@@ -78,11 +85,14 @@ namespace AsepriteImporter
             (int)TextureImportTypeIndex.NormalMap
         };
 
-        private static readonly Color asepriteEditorBackground = new Color(0.5f, 0.7f, 0.9f);
+        private readonly string[] editorTabs = { "Texture", "Animation" };
 
+        private static readonly Color asepriteEditorBackground = new Color(0.3f, 0.6f, 1f, 0.1f);
         private static readonly Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
-
+        
         private AseFileImporter importer;
+        private int activeTab = 0;
+
 
         public override void OnEnable()
         {
@@ -100,10 +110,43 @@ namespace AsepriteImporter
                 importer.textureImporterSettings = new AsepriteTextureImportSettings();
 
             DrawAsepriteImporterSettings();
-            DrawTextureImporterSettings();
-            DrawAnimationImportSettings();
 
+            activeTab = GUILayout.Toolbar(activeTab, editorTabs);
+
+            switch (activeTab)
+            {
+                case 0:
+                    DrawTextureImporterSettings();
+                    break;
+                case 1:
+                    DrawAnimationImportSettings();
+                    break;
+            }
+
+            serializedObject.ApplyModifiedProperties();
             ApplyRevertGUI();
+        }
+
+
+
+        private void GenerateSprites()
+        {
+            if (EditorUtility.DisplayDialog(
+                        "Automatic Sprite Generation",
+                        "The import setting \"Sprite Mode\" and all the custom sprites made with the \"Sprite Editor\" will be replaced!" +
+                        "\nDo you want to continue?",
+                        "Generate", "Cancel"))
+            {
+                ResetValues();
+                importer.GenerateAtlasTexture(true);
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+
+                ApplyAndImport();
+                
+                
+                GUIUtility.ExitGUI();
+            }
         }
 
 
@@ -122,11 +165,14 @@ namespace AsepriteImporter
                 SerializedProperty generateAnimations = serializedObject.FindProperty("generateAnimations");
                 EditorGUILayout.PropertyField(generateAnimations);
 
+                SerializedProperty createAnimationAssets = serializedObject.FindProperty("createAnimationAssets");
+                EditorGUILayout.PropertyField(createAnimationAssets);
+
                 GUI.enabled = generateAnimations.boolValue;
                 ++EditorGUI.indentLevel;
                 for (int i = 0; i < arraySize; i++)
                 {
-                    DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i));
+                    DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i), importer.animationSettings[i]);
                 }
                 --EditorGUI.indentLevel;
                 GUI.enabled = true;
@@ -149,21 +195,15 @@ namespace AsepriteImporter
                 EditorGUILayout.HelpBox("Auto Import automatically sets the import settings for you and creates all the sprites you need.", MessageType.None);
                 EditorGUILayout.Space();
 
+                SerializedProperty generationType = serializedObject.FindProperty(AUTO_GEMERATION_SETTINGS_PATH + "generationType");
+                CustomEnumPopup("Generation Type", generationType, mappingGenerationType);
+                
+
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("");
                 if (GUILayout.Button("Auto Generate Sprites"))
                 {
-                    if (EditorUtility.DisplayDialog(
-                        "Automatic Sprite Generation", 
-                        "The import setting \"Sprite Mode\" and all the custom sprites made with the \"Sprite Editor\" will be replaced!" +
-                        "\nDo you want to continue?",
-                        "Generate", "Cancel"))
-                    {
-                        importer.GenerateAtlasTexture(true);
-                        serializedObject.Update();
-                        Apply();
-                        ResetValues();
-                    }
+                    GenerateSprites();
                 }
                 EditorGUILayout.EndHorizontal();
 
@@ -172,7 +212,6 @@ namespace AsepriteImporter
             }
 
             EditorGUILayout.Space();
-
         }
 
 
@@ -370,11 +409,12 @@ namespace AsepriteImporter
         protected override void Apply()
         {
             var importer = serializedObject.targetObject as AseFileImporter;
-
+            
             if (importer.textureImporterSettings.spriteMode != (int)SpriteImportMode.Multiple)
             {
                 if (importer.SpriteImportData.Length > 1)
                 {
+                    serializedObject.FindProperty("spriteImportData").ClearArray();
                     importer.SetSingleSpriteImportData();
                 }
             }
@@ -408,12 +448,14 @@ namespace AsepriteImporter
 
 
 
-        private void DrawAnimationSetting(SerializedProperty animationSettings)
+        private void DrawAnimationSetting(SerializedProperty animationSettingProperty, AseFileAnimationSettings animationSetting)
         {
-            string animationName = animationSettings.FindPropertyRelative("animationName").stringValue;
+            string animationName = animationSettingProperty.FindPropertyRelative("animationName").stringValue;
             
             if (animationName == null)
                 return;
+
+            
 
             if (!foldoutStates.ContainsKey(animationName))
             {
@@ -427,14 +469,25 @@ namespace AsepriteImporter
             FontStyle prevoiusFontStyle = foldoutStyle.fontStyle;
             foldoutStyle.fontStyle = FontStyle.Bold;
 
-            if (foldoutStates[animationName] = EditorGUILayout.Foldout(foldoutStates[animationName],
-               animationName, true, foldoutStyle))
-            {
-                EditorGUILayout.PropertyField(animationSettings.FindPropertyRelative("loopTime"));
-                EditorGUILayout.HelpBox(animationSettings.FindPropertyRelative("about").stringValue, MessageType.None);
+            var content = new GUIContent();
+            content.text = animationName;
 
-                SerializedProperty sprites = animationSettings.FindPropertyRelative("sprites");
-                SerializedProperty frameNumbers = animationSettings.FindPropertyRelative("frameNumbers");
+            if (animationSetting.HasInvalidSprites)
+                content.image = EditorGUIUtility.IconContent("console.warnicon.sml").image;
+
+
+            if (foldoutStates[animationName] = EditorGUILayout.Foldout(foldoutStates[animationName],
+               content, true, foldoutStyle))
+            {
+                if (animationSetting.HasInvalidSprites)
+                    EditorGUILayout.HelpBox($"The animation '{animationName}' will not be imported.\nSome sprites are missing.", MessageType.Warning);
+
+
+                EditorGUILayout.PropertyField(animationSettingProperty.FindPropertyRelative("loopTime"));
+                EditorGUILayout.HelpBox(animationSettingProperty.FindPropertyRelative("about").stringValue, MessageType.None);
+
+                SerializedProperty sprites = animationSettingProperty.FindPropertyRelative("sprites");
+                SerializedProperty frameNumbers = animationSettingProperty.FindPropertyRelative("frameNumbers");
 
                 for (int i = 0; i < sprites.arraySize; i++)
                 {
@@ -456,10 +509,11 @@ namespace AsepriteImporter
             {
                 if (EditorUtility.IsDirty(serializedObject.targetObject.GetInstanceID()))
                 {
-                    if (EditorUtility.DisplayDialog("Unapplied import settings", "Unapplied import settings for <filename>.\nApply and continue to sprite editor or cancel.", "Apply", "Cancel"))
+                    var assetPath = (serializedObject.targetObject as ScriptedImporter).assetPath;
+
+                    if (EditorUtility.DisplayDialog("Unapplied import settings", $"Unapplied import settings for {assetPath}.\nApply and continue to sprite editor or cancel.", "Apply", "Cancel"))
                     {
                         ApplyAndImport();
-                        serializedObject.Update();
                     }
                     else
                     {
@@ -467,10 +521,9 @@ namespace AsepriteImporter
                     }
                 }
 
-                if (EditorApplication.ExecuteMenuItem("Window/2D/Sprite Editor"))
-                {
-                    EditorUtility.SetDirty(target);
-                }
+                EditorApplication.ExecuteMenuItem("Window/2D/Sprite Editor");
+
+                GUIUtility.ExitGUI();
             }
 
             EditorGUILayout.Space();

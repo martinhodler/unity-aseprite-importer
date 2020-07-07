@@ -26,5 +26,19 @@ namespace AsepriteImporter
         {
             return animationName;
         }
+
+        public bool HasInvalidSprites
+        {
+            get
+            {
+                foreach (Sprite sprite in sprites)
+                {
+                    if (sprite == null)
+                        return true;
+                }
+
+                return false;
+            }
+        }
     }
 }
