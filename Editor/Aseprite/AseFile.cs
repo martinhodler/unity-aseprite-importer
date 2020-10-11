@@ -3,6 +3,9 @@ using Aseprite.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEngine;
 
 namespace Aseprite
@@ -172,6 +175,8 @@ namespace Aseprite
             for (int i = 0; i < cels.Count; i++)
             {
                 LayerChunk layer = layers[cels[i].LayerIndex];
+                if (layer.LayerName.StartsWith("@")) //ignore metadata layer
+                    continue;
 
                 LayerBlendMode blendMode = layer.BlendMode;
                 float opacity = Mathf.Min(layer.Opacity / 255f, cels[i].Opacity / 255f);
@@ -277,6 +282,60 @@ namespace Aseprite
             }
 
             return animations.ToArray();
+        }
+
+        public MetaData[] GetMetaData(Vector2 spritePivot, int pixelsPerUnit)
+        {
+            Dictionary<int, MetaData> metadatas = new Dictionary<int, MetaData>();
+
+            for (int index = 0; index < Frames.Count; index++)
+            {
+                List<LayerChunk> layers = GetChunks<LayerChunk>();
+                List<CelChunk> cels = Frames[index].GetChunks<CelChunk>();
+
+                cels.Sort((ca, cb) => ca.LayerIndex.CompareTo(cb.LayerIndex));
+
+                for (int i = 0; i < cels.Count; i++)
+                {
+                    int layerIndex = cels[i].LayerIndex;
+                    LayerChunk layer = layers[layerIndex];
+                    if (!layer.LayerName.StartsWith(MetaData.MetaDataChar)) //read only metadata layer
+                        continue;
+
+                    if (!metadatas.ContainsKey(layerIndex))
+                        metadatas[layerIndex] = new MetaData(layer.LayerName);
+                    var metadata = metadatas[layerIndex];
+
+                    CelChunk cel = cels[i];
+                    Vector2 center = Vector2.zero;
+                    int pixelCount = 0;
+
+                    for (int y = 0; y < cel.Height; ++y)
+                    {
+                        for (int x = 0; x < cel.Width; ++x)
+                        {
+                            int texX = cel.X + x;
+                            int texY = -(cel.Y + y) + Header.Height - 1;
+                            var col = cel.RawPixelData[x + y * cel.Width];
+                            if (col.GetColor().a > 0.1f)
+                            {
+                                center += new Vector2(texX, texY);
+                                pixelCount++;
+                            }
+                        }
+                    }
+
+                    if (pixelCount > 0)
+                    {
+                        center /= pixelCount;
+                        var pivot = Vector2.Scale(spritePivot, new Vector2(Header.Width, Header.Height));
+                        var posWorld = (center - pivot) / pixelsPerUnit + Vector2.one * 0.5f / pixelsPerUnit; //center pos in middle of pixels
+
+                        metadata.Transforms.Add(index, posWorld);
+                    }
+                }
+            }
+            return metadatas.Values.ToArray();
         }
 
         public Texture2D GetTextureAtlas()

@@ -190,6 +190,8 @@ namespace AsepriteImporter
             if (animations.Length <= 0)
                 return;
 
+            var metadatas = aseFile.GetMetaData(textureSettings.spritePivot, textureSettings.pixelsPerUnit);
+
             if (animationSettings != null)
                 RemoveUnusedAnimationSettings(animSettings, animations);
 
@@ -203,7 +205,6 @@ namespace AsepriteImporter
 
                 AseFileAnimationSettings importSettings = GetAnimationSettingFor(animSettings, animation);
                 importSettings.about = GetAnimationAbout(animation);
-
 
                 EditorCurveBinding editorBinding = new EditorCurveBinding();
                 editorBinding.path = "";
@@ -222,6 +223,8 @@ namespace AsepriteImporter
 
                 int length = animation.FrameTo - animation.FrameFrom + 1;
                 ObjectReferenceKeyframe[] spriteKeyFrames = new ObjectReferenceKeyframe[length + 1]; // plus last frame to keep the duration
+                Dictionary<string, AnimationCurve> transformCurveX = new Dictionary<string, AnimationCurve>(),
+                                                   transformCurveY = new Dictionary<string, AnimationCurve>();
 
                 float time = 0;
 
@@ -243,9 +246,23 @@ namespace AsepriteImporter
                     frame.value = sprites[keyIndex];
 
                     time += aseFile.Frames[keyIndex].FrameDuration / 1000f;
+                    spriteKeyFrames[i] = frame;
+
+                    foreach(var metadata in metadatas)
+                        if(metadata.Type == MetaDataType.TRANSFORM && metadata.Transforms.ContainsKey(keyIndex))
+                        {
+                            var childTransform = metadata.Args[0];
+                            if (!transformCurveX.ContainsKey(childTransform))
+                            {
+                                transformCurveX[childTransform] = new AnimationCurve();
+                                transformCurveY[childTransform] = new AnimationCurve();
+                            }
+                            var pos = metadata.Transforms[keyIndex];
+                            transformCurveX[childTransform].AddKey(i, pos.x);
+                            transformCurveY[childTransform].AddKey(i, pos.y);
+                        }
 
                     keyIndex += step;
-                    spriteKeyFrames[i] = frame;
                 }
 
                 float frameTime = 1f / animationClip.frameRate;
@@ -255,9 +272,28 @@ namespace AsepriteImporter
                 lastFrame.value = sprites[keyIndex - step];
 
                 spriteKeyFrames[spriteKeyFrames.Length - 1] = lastFrame;
-
+                foreach (var metadata in metadatas)
+                    if (metadata.Type == MetaDataType.TRANSFORM && metadata.Transforms.ContainsKey(keyIndex - step))
+                    {
+                        var childTransform = metadata.Args[0];
+                        var pos = metadata.Transforms[keyIndex - step];
+                        transformCurveX[childTransform].AddKey(spriteKeyFrames.Length - 1, pos.x);
+                        transformCurveY[childTransform].AddKey(spriteKeyFrames.Length - 1, pos.y);
+                    }
 
                 AnimationUtility.SetObjectReferenceCurve(animationClip, editorBinding, spriteKeyFrames);
+
+                foreach (var childTransform in transformCurveX.Keys)
+                {
+                    EditorCurveBinding
+                    bindingX = new EditorCurveBinding { path = childTransform, type = typeof(Transform), propertyName = "m_LocalPosition.x" },
+                    bindingY = new EditorCurveBinding { path = childTransform, type = typeof(Transform), propertyName = "m_LocalPosition.y" };
+                    MakeConstant(transformCurveX[childTransform]);
+                    AnimationUtility.SetEditorCurve(animationClip, bindingX, transformCurveX[childTransform]);
+                    MakeConstant(transformCurveY[childTransform]);
+                    AnimationUtility.SetEditorCurve(animationClip, bindingY, transformCurveY[childTransform]);
+                }
+
                 AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(animationClip);
 
                 switch (animation.Animation)
@@ -338,6 +374,14 @@ namespace AsepriteImporter
             sb.AppendFormat("Animation:\tFrom: {0}; To: {1}", animation.FrameFrom, animation.FrameTo);
 
             return sb.ToString();
+        }
+
+        static void MakeConstant(AnimationCurve curve)
+        {
+            for (int i = 0; i < curve.length; ++i)
+            {
+                AnimationUtility.SetKeyRightTangentMode(curve, i, AnimationUtility.TangentMode.Constant);
+            }
         }
     }
 }
