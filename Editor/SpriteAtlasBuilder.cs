@@ -55,7 +55,7 @@ namespace AsepriteImporter
             return flipped;
         }
 
-        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, bool mask,
+        public Texture2D GenerateAtlas(Texture2D[] sprites, out SpriteImportData[] spriteData, TransparencyMode transparencyMode,
             bool baseTwo = true)
         {
             var cols = sprites.Length;
@@ -96,7 +96,7 @@ namespace AsepriteImporter
             cols = (int) Math.Ceiling(spriteCount / divider);
             rows = (int) Math.Ceiling(spriteCount / cols);
 
-            if (mask)
+            if (transparencyMode == TransparencyMode.Mask)
             {
                 return GenerateAtlas(sprites, out spriteData, cols, rows, textureSettings.transparentColor, baseTwo);
             }

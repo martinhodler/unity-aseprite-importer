@@ -17,6 +17,13 @@ namespace AsepriteImporter
         LayerToSprite
     }
 
+    public enum EmptyTileBehaviour
+    {
+        Keep,
+        Index,
+        Remove
+    }
+
     public enum AseEditorBindType
     {
         SpriteRenderer,
@@ -31,6 +38,7 @@ namespace AsepriteImporter
         [SerializeField] public Texture2D atlas;
         [SerializeField] public AseFileImportType importType;
         [SerializeField] public AseEditorBindType bindType;
+        [SerializeField] public EmptyTileBehaviour emptyTileBehaviour;
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
@@ -59,11 +67,10 @@ namespace AsepriteImporter
 
             //}
 
-            atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentMask, false);
-
+            atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparencyMode, false);
 
             atlas.filterMode = textureSettings.filterMode;
-            atlas.alphaIsTransparency = false;
+            atlas.alphaIsTransparency = textureSettings.transparencyMode == TransparencyMode.Alpha;
             atlas.wrapMode = textureSettings.wrapMode;
             atlas.name = "Texture";
 
@@ -123,6 +130,15 @@ namespace AsepriteImporter
                 {
                     Rect tileRect = new Rect(x * width, y * height, width, height);
 
+                    if (emptyTileBehaviour != EmptyTileBehaviour.Keep)
+                    {
+                        if (IsTileEmpty(tileRect, atlas))
+                        {
+                            if (emptyTileBehaviour == EmptyTileBehaviour.Index) index++;
+                            continue;
+                        }
+                    }
+
                     Sprite sprite = Sprite.Create(atlas, tileRect, textureSettings.spritePivot,
                         textureSettings.pixelsPerUnit, textureSettings.extrudeEdges, textureSettings.meshType,
                         Vector4.zero, textureSettings.generatePhysics);
@@ -133,6 +149,17 @@ namespace AsepriteImporter
                     index++;
                 }
             }
+        }
+
+        private bool IsTileEmpty(Rect tileRect, Texture2D atlas)
+        {
+            Color[] tilePixels = atlas.GetPixels((int)tileRect.xMin, (int)tileRect.yMin, (int)tileRect.width, (int)tileRect.height);
+            for (int i = 0; i < tilePixels.Length; i++)
+            {
+                if (tilePixels[i].a != 0) 
+                    return false;
+            }
+            return true;
         }
 
         private string GetFileName(string assetPath)

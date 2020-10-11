@@ -24,7 +24,6 @@ namespace AsepriteImporter
             foldoutStates.Clear();
         }
 
-
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -45,21 +44,19 @@ namespace AsepriteImporter
                     importTypeProperty.intValue = importType;
                 }
 
-                var transparentColorMask = serializedObject.FindProperty(textureSettings + "transparentMask");
+                var transparencyMode = serializedObject.FindProperty(textureSettings + "transparencyMode");
                 var transparentColor = serializedObject.FindProperty(textureSettings + "transparentColor");
 
-                Rect lastRect = GUILayoutUtility.GetLastRect();
-                Rect resetButton = new Rect(EditorGUIUtility.labelWidth + 50,
-                    lastRect.y + EditorGUIUtility.singleLineHeight, 60, 18);
-                if (GUI.Button(resetButton, "Reset"))
+                EditorGUILayout.PropertyField(transparencyMode);
+                if (transparencyMode.intValue == (int)TransparencyMode.Mask)
                 {
-                    transparentColor.colorValue = Color.magenta;
-                }
-
-                EditorGUILayout.PropertyField(transparentColorMask);
-                if (transparentColorMask.boolValue)
-                {
+                    EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.PropertyField(transparentColor);
+                    if (GUILayout.Button("Reset"))
+                    {
+                        transparentColor.colorValue = Color.magenta;
+                    }
+                    EditorGUILayout.EndHorizontal();
                 }
 
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "pixelsPerUnit"));
@@ -161,6 +158,7 @@ namespace AsepriteImporter
                     EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "tilePadding"));
                     EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "tileOffset"));
                     PivotPopup("Tile Pivot");
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty("emptyTileBehaviour"), new GUIContent("Empty Tile Behaviour", "Behavior for empty tiles:\nKeep - Keep empty tiles\nIndex - Remove empty tiles, but still index them\nRemove - Remove empty tiles completely"));
 
                     EditorGUI.indentLevel--;
                 }
