@@ -34,7 +34,7 @@ namespace AsepriteImporter
         [SerializeField] public TextureWrapMode wrapMode = TextureWrapMode.Clamp;
         [SerializeField] public FilterMode filterMode = FilterMode.Point;
 
-        [SerializeField] public Vector2Int tileSize = new Vector2Int(32, 32);
+        [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
         [SerializeField] public Vector2Int tilePadding = new Vector2Int(0, 0);
         [SerializeField] public Vector2Int tileOffset = new Vector2Int(0, 0);
     }

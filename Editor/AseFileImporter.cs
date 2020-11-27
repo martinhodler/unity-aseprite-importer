@@ -45,10 +45,24 @@ namespace AsepriteImporter
             name = GetFileName(ctx.assetPath);
 
             AseFile aseFile = ReadAseFile(ctx.assetPath);
-            int frameCount = aseFile.Header.Frames;
 
+            switch (importType)
+            {
+                case AseFileImportType.LayerToSprite:
+                case AseFileImportType.Sprite:
+                    ImportSprites(ctx, aseFile);
+                    break;
+                case AseFileImportType.Tileset:
+                    ImportTileset(ctx, aseFile);
+                    break;
+            }
+
+            ctx.SetMainObject(atlas);
+        }
+
+        private void ImportSprites(AssetImportContext ctx, AseFile aseFile)
+        {
             SpriteAtlasBuilder atlasBuilder = new SpriteAtlasBuilder(textureSettings, aseFile.Header.Width, aseFile.Header.Height);
-
             Texture2D[] frames = null;
             if (importType != AseFileImportType.LayerToSprite)
                 frames = aseFile.GetFrames();
@@ -56,46 +70,16 @@ namespace AsepriteImporter
                 frames = aseFile.GetLayersAsFrames();
 
             SpriteImportData[] spriteImportData = new SpriteImportData[0];
-
-            //if (textureSettings.transparentMask)
-            //{
-            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparentColor, false);
-            //}
-            //else
-            //{
-            //    atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, false);
-
-            //}
-
             atlas = atlasBuilder.GenerateAtlas(frames, out spriteImportData, textureSettings.transparencyMode, false);
-
             atlas.filterMode = textureSettings.filterMode;
             atlas.alphaIsTransparency = textureSettings.transparencyMode == TransparencyMode.Alpha;
             atlas.wrapMode = textureSettings.wrapMode;
             atlas.name = "Texture";
-
             ctx.AddObjectToAsset("Texture", atlas);
-
             ctx.SetMainObject(atlas);
 
-            switch (importType)
-            {
-                case AseFileImportType.LayerToSprite:
-                case AseFileImportType.Sprite:
-                    ImportSprites(ctx, aseFile, spriteImportData);
-                    break;
-                case AseFileImportType.Tileset:
-                    ImportTileset(ctx, atlas);
-                    break;
-            }
-
-            ctx.SetMainObject(atlas);
-        }
-
-        private void ImportSprites(AssetImportContext ctx, AseFile aseFile, SpriteImportData[] spriteImportData)
-        {
+            
             int spriteCount = spriteImportData.Length;
-
 
             Sprite[] sprites = new Sprite[spriteCount];
 
@@ -114,10 +98,23 @@ namespace AsepriteImporter
             GenerateAnimations(ctx, aseFile, sprites);
         }
 
-        private void ImportTileset(AssetImportContext ctx, Texture2D atlas)
+        private void ImportTileset(AssetImportContext ctx, AseFile aseFile)
         {
-            int cols = atlas.width / textureSettings.tileSize.x;
-            int rows = atlas.height / textureSettings.tileSize.y;
+            TileAtlasBuilder atlasBuilder = new TileAtlasBuilder(textureSettings, aseFile.Header.Width, aseFile.Header.Height);
+            Texture2D[] frames = aseFile.GetFrames();
+
+            atlas = atlasBuilder.GenerateAtlas(frames[0], false);
+            atlas.filterMode = textureSettings.filterMode;
+            atlas.alphaIsTransparency = textureSettings.transparencyMode == TransparencyMode.Alpha;
+            atlas.wrapMode = textureSettings.wrapMode;
+            atlas.name = "Texture";
+            ctx.AddObjectToAsset("Texture", atlas);
+            ctx.SetMainObject(atlas);
+            
+            
+            int cols = aseFile.Header.Width / textureSettings.tileSize.x;
+            int rows = aseFile.Header.Height / textureSettings.tileSize.y;
+            Vector2Int padding = textureSettings.tilePadding;
 
             int width = textureSettings.tileSize.x;
             int height = textureSettings.tileSize.y;
@@ -128,8 +125,10 @@ namespace AsepriteImporter
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    Rect tileRect = new Rect(x * width, y * height, width, height);
-
+                    Rect tileRect = new Rect(x * (width + padding.x * 2) + padding.x,
+                                             y * (height + padding.y * 2) + padding.y, 
+                                             width, 
+                                             height);
                     if (emptyTileBehaviour != EmptyTileBehaviour.Keep)
                     {
                         if (IsTileEmpty(tileRect, atlas))
