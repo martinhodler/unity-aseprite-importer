@@ -1,41 +1,44 @@
-﻿using UnityEditor;
+using System;
 using UnityEngine;
 
 
-namespace AsepriteImporter
-{
-    public enum MirrorOption
-    {
-        None,
-        X,
-        Y
+namespace AseImporter {
+    public enum AseFileImportType {
+        Sprite,
+        Tileset,
     }
 
-    public enum TransparencyMode
-    {
-        Disabled,
-        Alpha,
-        Mask
+    public enum TileNameType {
+        Index,
+        RowCol,
     }
 
-    [System.Serializable]
-    public class AseFileTextureSettings
-    {
-        [SerializeField] public TextureImporterType textureType = TextureImporterType.Sprite;
-        [SerializeField] public int pixelsPerUnit = 32;
-        [SerializeField] public MirrorOption mirror = MirrorOption.None;
-        [SerializeField] public TransparencyMode transparencyMode = TransparencyMode.Disabled;
-        [SerializeField] public Color transparentColor = Color.magenta;
-        [SerializeField] public SpriteMeshType meshType = SpriteMeshType.Tight;
-        [Range(0, 32)] [SerializeField] public uint extrudeEdges = 1;
+    public enum EmptyTileBehaviour {
+        Keep,
+    }
+    
+    public enum AseEditorBindType {
+        SpriteRenderer,
+        UIImage
+    }
+
+
+    [Serializable]
+    public class AseFileTextureSettings {
+        [SerializeField] public AseFileImportType importType = AseFileImportType.Sprite;
+        [SerializeField] public int pixelsPerUnit = 16;
+        [SerializeField] public int spriteAlignment = 0;
         [SerializeField] public Vector2 spritePivot = new Vector2(0.5f, 0.5f);
-        [SerializeField] public bool generatePhysics = true;
-
-        [SerializeField] public TextureWrapMode wrapMode = TextureWrapMode.Clamp;
-        [SerializeField] public FilterMode filterMode = FilterMode.Point;
+        
+        [SerializeField] public AseEditorBindType bindType = AseEditorBindType.SpriteRenderer;
+        [SerializeField] public bool createController = false;
 
         [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
-        [SerializeField] public Vector2Int tilePadding = new Vector2Int(0, 0);
-        [SerializeField] public Vector2Int tileOffset = new Vector2Int(0, 0);
+        [SerializeField] public TileNameType tileNameType = TileNameType.Index;
+        [SerializeField] public EmptyTileBehaviour tileEmpty = EmptyTileBehaviour.Keep;
+        
+        public AseFileTextureSettings Clone() {
+            return (AseFileTextureSettings)this.MemberwiseClone();
+        }
     }
 }

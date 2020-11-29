@@ -1,36 +1,29 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor;
 
-namespace AsepriteImporter
-{
+namespace AseImporter {
     [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
-    public class AseFileImporterEditor : ScriptedImporterEditor
-    {
-        private string[] importTypes = new string[] {"Sprite", "Tileset (Grid)", "Layer To Sprite"};
+    public class AseFileImporterEditor : ScriptedImporterEditor {
+        private string[] importTypes = {"Sprite", "Tileset (Grid)"};
 
-        private string[] spritePivotOptions = new string[]
-        {
+        private string[] spritePivotOptions = {
             "Center", "Top Left", "Top", "Top Right", "Left", "Right", "Bottom Left", "Bottom", "Bottom Right", "Custom"
         };
 
-        private bool customSpritePivot = false;
+        private bool customSpritePivot;
         private Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
 
-        public override void OnEnable()
-        {
+        public override void OnEnable() {
             base.OnEnable();
             foldoutStates.Clear();
         }
 
-        public override void OnInspectorGUI()
-        {
+        public override void OnInspectorGUI() {
             serializedObject.Update();
-            var importer = serializedObject.targetObject as AseFileImporter;
-            var textureSettings = "textureSettings.";
-
-            var importTypeProperty = serializedObject.FindProperty("importType");
+            var settings = "settings.";
+            var importTypeProperty = serializedObject.FindProperty(settings + "importType");
 
             EditorGUILayout.LabelField("Texture Options", EditorStyles.boldLabel);
             {
@@ -38,148 +31,78 @@ namespace AsepriteImporter
 
                 var importType = importTypeProperty.intValue;
                 EditorGUI.BeginChangeCheck();
-                importType = EditorGUILayout.Popup("Import Type", importType, importTypes);
-                if (EditorGUI.EndChangeCheck())
-                {
+                importType = EditorGUILayout.Popup("GenerateSprites Type", importType, importTypes);
+                if (EditorGUI.EndChangeCheck()) {
                     importTypeProperty.intValue = importType;
                 }
 
-                var transparencyMode = serializedObject.FindProperty(textureSettings + "transparencyMode");
-                var transparentColor = serializedObject.FindProperty(textureSettings + "transparentColor");
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "pixelsPerUnit"));
 
-                EditorGUILayout.PropertyField(transparencyMode);
-                if (transparencyMode.intValue == (int)TransparencyMode.Mask)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.PropertyField(transparentColor);
-                    if (GUILayout.Button("Reset"))
-                    {
-                        transparentColor.colorValue = Color.magenta;
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "pixelsPerUnit"));
-
-                if (importTypeProperty.intValue == (int) AseFileImportType.Sprite)
-                {
-                    // Mirror
-                    var mirrorProperty = serializedObject.FindProperty(textureSettings + "mirror");
-                    var mirror = (MirrorOption) mirrorProperty.enumValueIndex;
-
-                    EditorGUI.BeginChangeCheck();
-                    mirror = (MirrorOption) EditorGUILayout.EnumPopup("Mirror", mirror);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        mirrorProperty.enumValueIndex = (int) mirror;
-                    }
-                }
-
-                var meshTypeProperty = serializedObject.FindProperty(textureSettings + "meshType");
-                var meshType = (SpriteMeshType) meshTypeProperty.intValue;
-
-                EditorGUI.BeginChangeCheck();
-                meshType = (SpriteMeshType) EditorGUILayout.EnumPopup("Mesh Type", meshType);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    meshTypeProperty.intValue = (int) meshType;
-                }
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "extrudeEdges"));
-
-                if (importTypeProperty.intValue == (int) AseFileImportType.Sprite)
-                {
+                if (importTypeProperty.intValue == (int) AseFileImportType.Sprite) {
                     PivotPopup("Pivot");
-                }
-
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "generatePhysics"));
-
-                var editorBindingProperty = serializedObject.FindProperty("bindType");
-                var editorBinding = (AseEditorBindType) editorBindingProperty.intValue;
-
-                EditorGUI.BeginChangeCheck();
-                editorBinding = (AseEditorBindType) EditorGUILayout.EnumPopup("Component to Bind", editorBinding);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    editorBindingProperty.intValue = (int) editorBinding;
-                }
-
-                EditorGUILayout.Space();
-
-                var wrapModeProperty = serializedObject.FindProperty(textureSettings + "wrapMode");
-                var wrapMode = (TextureWrapMode) wrapModeProperty.intValue;
-
-                EditorGUI.BeginChangeCheck();
-                wrapMode = (TextureWrapMode) EditorGUILayout.EnumPopup("Wrap Mode", wrapMode);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    wrapModeProperty.intValue = (int) wrapMode;
-                }
-
-                var filterModeProperty = serializedObject.FindProperty(textureSettings + "filterMode");
-                var filterMode = (FilterMode) filterModeProperty.intValue;
-
-                EditorGUI.BeginChangeCheck();
-                filterMode = (FilterMode) EditorGUILayout.EnumPopup("Filter Mode", filterMode);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    filterModeProperty.intValue = (int) filterMode;
                 }
 
                 EditorGUI.indentLevel--;
             }
 
-
             EditorGUILayout.Space();
 
-            SerializedProperty animationSettingsArray = serializedObject.FindProperty("animationSettings");
+            if (importTypeProperty.intValue == (int) AseFileImportType.Sprite) {
+                EditorGUI.indentLevel++;
+                var bindTypeProperty = serializedObject.FindProperty(settings + "bindType");
+                var bindType = (AseEditorBindType) bindTypeProperty.intValue;
 
-            if (animationSettingsArray != null)
-            {
-                int arraySize = animationSettingsArray.arraySize;
-                if (arraySize > 0)
-                {
-                    EditorGUILayout.LabelField("Animation Options", EditorStyles.boldLabel);
+                EditorGUI.BeginChangeCheck();
+                bindType = (AseEditorBindType) EditorGUILayout.EnumPopup("Bind Type", bindType);
+                if (EditorGUI.EndChangeCheck()) {
+                    bindTypeProperty.intValue = (int) bindType;
                 }
-
-                for (int i = 0; i < arraySize; i++)
-                {
-                    DrawAnimationSetting(animationSettingsArray.GetArrayElementAtIndex(i));
-                }
+                
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "createController"));
+                EditorGUI.indentLevel--;
             }
-
-            if (importTypeProperty.intValue == (int) AseFileImportType.Tileset)
-            {
+            
+            if (importTypeProperty.intValue == (int) AseFileImportType.Tileset) {
                 EditorGUILayout.LabelField("Tileset Options", EditorStyles.boldLabel);
                 {
                     EditorGUI.indentLevel++;
 
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "tileSize"));
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "tilePadding"));
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty(textureSettings + "tileOffset"));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "tileSize"));
                     PivotPopup("Tile Pivot");
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty("emptyTileBehaviour"), new GUIContent("Empty Tile Behaviour", "Behavior for empty tiles:\nKeep - Keep empty tiles\nIndex - Remove empty tiles, but still index them\nRemove - Remove empty tiles completely"));
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "tileEmpty"), new GUIContent("Empty Tile Behaviour", "Behavior for empty tiles:\nKeep - Keep empty tiles\nIndex - Remove empty tiles, but still index them\nRemove - Remove empty tiles completely"));
+
+                    // tileNameType
+                    var tileNameTypeProperty = serializedObject.FindProperty(settings + "tileNameType");
+                    var tileNameType = (TileNameType) tileNameTypeProperty.enumValueIndex;
+
+                    EditorGUI.BeginChangeCheck();
+                    tileNameType = (TileNameType) EditorGUILayout.EnumPopup("TileNameType", tileNameType);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        tileNameTypeProperty.enumValueIndex = (int) tileNameType;
+                    }
 
                     EditorGUI.indentLevel--;
                 }
             }
 
             serializedObject.ApplyModifiedProperties();
-            base.ApplyRevertGUI();
+            ApplyRevertGUI();
         }
 
-
-        private void PivotPopup(string label)
-        {
-            var pivotProperty = serializedObject.FindProperty("textureSettings.spritePivot");
+        private void PivotPopup(string label) {
+            var alignmentProperty = serializedObject.FindProperty("settings.spriteAlignment");
+            var pivotProperty = serializedObject.FindProperty("settings.spritePivot");
             var pivot = pivotProperty.vector2Value;
+            var alignment = alignmentProperty.intValue;
 
             EditorGUI.BeginChangeCheck();
-            switch (EditorGUILayout.Popup(label, GetSpritePivotOptionIndex(pivot), spritePivotOptions))
-            {
+            alignment = EditorGUILayout.Popup(label, alignment, spritePivotOptions);
+            switch (alignment) {
                 case 0:
                     customSpritePivot = false;
                     pivot = new Vector2(0.5f, 0.5f);
+                    
                     break;
                 case 1:
                     customSpritePivot = false;
@@ -218,56 +141,22 @@ namespace AsepriteImporter
                     break;
             }
 
-            if (customSpritePivot)
-            {
+            alignmentProperty.intValue = alignment;
+
+            if (customSpritePivot) {
                 EditorGUI.indentLevel++;
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("textureSettings.spritePivot"),
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("settings.spritePivot"),
                     new GUIContent(label));
                 EditorGUI.indentLevel--;
-            }
-            else if (EditorGUI.EndChangeCheck() && !customSpritePivot)
-            {
+            } else if (EditorGUI.EndChangeCheck() && !customSpritePivot) {
                 pivotProperty.vector2Value = pivot;
             }
         }
 
-
-        private void DrawAnimationSetting(SerializedProperty animationSettings)
-        {
-            string animationName = animationSettings.FindPropertyRelative("animationName").stringValue;
-
-            if (animationName == null)
-                return;
-
-            if (!foldoutStates.ContainsKey(animationName))
-            {
-                foldoutStates.Add(animationName, false);
-            }
-
-            EditorGUILayout.BeginVertical(GUI.skin.box);
-            EditorGUI.indentLevel++;
-
-            GUIStyle foldoutStyle = EditorStyles.foldout;
-            FontStyle prevoiusFontStyle = foldoutStyle.fontStyle;
-            foldoutStyle.fontStyle = FontStyle.Bold;
-
-            if (foldoutStates[animationName] = EditorGUILayout.Foldout(foldoutStates[animationName],
-                animationName, true, foldoutStyle))
-            {
-                EditorGUILayout.PropertyField(animationSettings.FindPropertyRelative("loopTime"));
-                EditorGUILayout.HelpBox(animationSettings.FindPropertyRelative("about").stringValue, MessageType.None);
-            }
-
-            foldoutStyle.fontStyle = prevoiusFontStyle;
-
-            EditorGUI.indentLevel--;
-            EditorGUILayout.EndVertical();
-        }
-
-        private int GetSpritePivotOptionIndex(Vector2 spritePivot)
-        {
-            if (customSpritePivot)
+        private int GetSpritePivotOptionIndex(Vector2 spritePivot) {
+            if (customSpritePivot) {
                 return spritePivotOptions.Length - 1;
+            }
 
             if (spritePivot.x == 0.5f && spritePivot.y == 0.5f) return 0;
             if (spritePivot.x == 0f && spritePivot.y == 1f) return 1;
