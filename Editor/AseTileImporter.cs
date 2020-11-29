@@ -7,69 +7,69 @@ using UnityEngine;
 
 namespace AseImporter {
     public class AseTileImporter {
-	    private AseFileTextureSettings settings;
-	    private int padding = 1;
-	    private Vector2Int size;
-	    private string fileName;
-	    private string filePath;
-	    private static EditorApplication.CallbackFunction onUpdate;
-	    private int updateLimit;
-	    
+        private AseFileTextureSettings settings;
+        private int padding = 1;
+        private Vector2Int size;
+        private string fileName;
+        private string filePath;
+        private static EditorApplication.CallbackFunction onUpdate;
+        private int updateLimit;
+        
         public void Import(string path, AseFile file, AseFileTextureSettings settings) {
-	        this.settings = settings;
-	        this.size = new Vector2Int(file.Header.Width, file.Header.Height); 
+            this.settings = settings;
+            this.size = new Vector2Int(file.Header.Width, file.Header.Height); 
 
-	        Texture2D frame = file.GetFrames()[0];
+            Texture2D frame = file.GetFrames()[0];
             bool isNew = BuildAtlas(path, frame);
             
-	        // async process
-	        if (isNew) {
-		        if (onUpdate == null) {
-			        onUpdate = OnUpdate;
-		        }
+            // async process
+            if (isNew) {
+                if (onUpdate == null) {
+                    onUpdate = OnUpdate;
+                }
 
-		        updateLimit = 300;
-		        EditorApplication.update = Delegate.Combine(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
-	        }
+                updateLimit = 300;
+                EditorApplication.update = Delegate.Combine(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
+            }
         }
 
         private void OnUpdate() {
-	        AssetDatabase.Refresh();
-	        var done = false;
-	        if (GenerateSprites(filePath, settings, size)) {
-		        done = true;
-	        } else {
-		        updateLimit--;
-		        if (updateLimit <= 0) {
-			        done = true;
-		        }
-	        }
+            AssetDatabase.Refresh();
+            var done = false;
+            if (GenerateSprites(filePath, settings, size)) {
+                done = true;
+            } else {
+                updateLimit--;
+                if (updateLimit <= 0) {
+                    done = true;
+                }
+            }
 
-	        if (done) {
-		        EditorApplication.update = Delegate.Remove(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
-	        }
+            if (done) {
+                EditorApplication.update = Delegate.Remove(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
+            }
         }
 
         private bool BuildAtlas(string acePath, Texture2D sprite) {
-	        fileName= Path.GetFileNameWithoutExtension(acePath);
-	        var directoryName = Path.GetDirectoryName(acePath) + "/" + fileName;
-	        if (!AssetDatabase.IsValidFolder(directoryName)) {
-		        AssetDatabase.CreateFolder(Path.GetDirectoryName(acePath), fileName);
-	        }
+            fileName= Path.GetFileNameWithoutExtension(acePath);
+            var directoryName = Path.GetDirectoryName(acePath) + "/" + fileName;
+            if (!AssetDatabase.IsValidFolder(directoryName)) {
+                AssetDatabase.CreateFolder(Path.GetDirectoryName(acePath), fileName);
+            }
 
-	        filePath = directoryName + "/" + fileName + ".png";
-	        bool isNew = !File.Exists(filePath);
+            filePath = directoryName + "/" + fileName + ".png";
+            bool isNew = !File.Exists(filePath);
 
-	        var atlas = GenerateAtlas(sprite);
-	        try {
-		        File.WriteAllBytes(filePath, atlas.EncodeToPNG());
-		        AssetDatabase.SaveAssets();
-		        AssetDatabase.Refresh();
-	        } catch (Exception e) {
-		        Debug.LogError(e.Message);
-	        }
+            var atlas = GenerateAtlas(sprite);
+            try {
+                File.WriteAllBytes(filePath, atlas.EncodeToPNG());
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            } catch (Exception e) {
+                Debug.LogError(e.Message);
+            }
 
-	        return isNew;
+            return isNew;
         }
 
         public Texture2D GenerateAtlas(Texture2D sprite) {
@@ -141,86 +141,86 @@ namespace AseImporter {
         }
         
         private bool GenerateSprites(string path, AseFileTextureSettings settings, Vector2Int size) {
-	        this.settings = settings;
-	        this.size = size; 
+            this.settings = settings;
+            this.size = size; 
 
-	        var fileName = Path.GetFileNameWithoutExtension(path);
-	        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
-	        if (importer == null) {
-		        return false;
-	        }
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) {
+                return false;
+            }
 
-	        importer.textureType = TextureImporterType.Sprite;
-	        importer.spritePixelsPerUnit = settings.pixelsPerUnit;
-	        importer.mipmapEnabled = false;
-	        importer.filterMode = FilterMode.Point;
-	        importer.spritesheet = CreateMetaData(fileName);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spritePixelsPerUnit = settings.pixelsPerUnit;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Point;
+            importer.spritesheet = CreateMetaData(fileName);
 
-	        importer.textureCompression = TextureImporterCompression.Uncompressed;
-	        importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.spriteImportMode = SpriteImportMode.Multiple;
 
-	        EditorUtility.SetDirty(importer);
-	        try {
-		        importer.SaveAndReimport();
-	        } catch (Exception e) {
-		        Debug.LogWarning("There was a problem with generating sprite file: " + e);
-	        }
+            EditorUtility.SetDirty(importer);
+            try {
+                importer.SaveAndReimport();
+            } catch (Exception e) {
+                Debug.LogWarning("There was a problem with generating sprite file: " + e);
+            }
 
-	        AssetDatabase.Refresh();
-	        AssetDatabase.SaveAssets();
-	        return true;
+            AssetDatabase.Refresh();
+            AssetDatabase.SaveAssets();
+            return true;
         }
 
         private SpriteMetaData[] CreateMetaData(string fileName) {
-	        var tileSize = settings.tileSize;
-	        var cols = size.x / tileSize.x;
-	        var rows = size.y / tileSize.y;
-	        var res = new SpriteMetaData[rows * cols];
-	        var index = 0;
-	        var height = rows * (tileSize.y + padding * 2);
-	        
-	        for (var row = 0; row < rows; row++) {
-		        for (var col = 0; col < cols; col++) {
-			        Rect rect = new Rect(col * (tileSize.x + padding * 2) + padding,
-			                             height - (row + 1) * (tileSize.y + padding * 2) + padding, 
-			                             tileSize.x,
-			                             tileSize.y);
-			        var meta = new SpriteMetaData();
-			        var no = col + row * rows;
-			        meta.name = fileName + "_" + no;
-			        if (settings.tileNameType == TileNameType.RowCol) {
-				        meta.name = GetRowColTileSpriteName(fileName, col, row, cols, rows);
-			        }
-			        
-			        meta.rect = rect;
-			        meta.alignment = settings.spriteAlignment;
-			        meta.pivot = settings.spritePivot;
+            var tileSize = settings.tileSize;
+            var cols = size.x / tileSize.x;
+            var rows = size.y / tileSize.y;
+            var res = new SpriteMetaData[rows * cols];
+            var index = 0;
+            var height = rows * (tileSize.y + padding * 2);
+            
+            for (var row = 0; row < rows; row++) {
+                for (var col = 0; col < cols; col++) {
+                    Rect rect = new Rect(col * (tileSize.x + padding * 2) + padding,
+                                         height - (row + 1) * (tileSize.y + padding * 2) + padding, 
+                                         tileSize.x,
+                                         tileSize.y);
+                    var meta = new SpriteMetaData();
+                    var no = col + row * rows;
+                    meta.name = fileName + "_" + no;
+                    if (settings.tileNameType == TileNameType.RowCol) {
+                        meta.name = GetRowColTileSpriteName(fileName, col, row, cols, rows);
+                    }
+                    
+                    meta.rect = rect;
+                    meta.alignment = settings.spriteAlignment;
+                    meta.pivot = settings.spritePivot;
 
-			        res[index] = meta;
-			        index++;
-		        }
-	        }
+                    res[index] = meta;
+                    index++;
+                }
+            }
 
-	        return res;
+            return res;
         }
         
         private string GetRowColTileSpriteName(string fileName, int x, int y, int cols, int rows) {
-	        int yHat = y;
-	        string row = yHat.ToString();
-	        string col = x.ToString();
-	        if (rows > 100) {
-		        row = yHat.ToString("D3");
-	        } else if (rows > 10) {
-		        row = yHat.ToString("D2");
-	        }
+            int yHat = y;
+            string row = yHat.ToString();
+            string col = x.ToString();
+            if (rows > 100) {
+                row = yHat.ToString("D3");
+            } else if (rows > 10) {
+                row = yHat.ToString("D2");
+            }
 
-	        if (cols > 100) {
-		        col = x.ToString("D3");
-	        } else if (cols > 10) {
-		        col = x.ToString("D2");
-	        }
+            if (cols > 100) {
+                col = x.ToString("D3");
+            } else if (cols > 10) {
+                col = x.ToString("D2");
+            }
 
-	        return string.Format("{0}_{1}_{2}", fileName, row, col);
+            return string.Format("{0}_{1}_{2}", fileName, row, col);
         }
     }
 }
