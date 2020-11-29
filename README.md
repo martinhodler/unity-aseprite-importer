@@ -17,6 +17,10 @@ This one genetate editable resources.
 * New tilemap name rule support (row-col) which makes you find a certain tile fast.
 * Some features are removed (Transparent color, Tilemap empty behavior) 
 
+![image](https://user-images.githubusercontent.com/22926212/100529665-2cb66480-322d-11eb-82fa-5729572a75d9.png)
+![image](https://user-images.githubusercontent.com/22926212/100529680-57a0b880-322d-11eb-8e8a-e0b48ff0495b.png)
+![image](https://user-images.githubusercontent.com/22926212/100529693-7e5eef00-322d-11eb-8d46-5c7e03e958ce.png)
+
 
 ## Usage
 Import the ```unity-aseprite-importer``` folder into your project's Packages folder. Now it should import all newly added .ase-files automatically. Already imported assets do need a manual re-import.
