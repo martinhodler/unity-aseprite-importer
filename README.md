@@ -6,6 +6,8 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 https://github.com/mjshin82/unity-aseprite-importer
 
 ## Difference with origin Aseprite-Importer
+The 'unity-aseprite-importer' is a good plugin but it only generate not-editable sprites and animations.
+This one genetate editable resources.
 * It makes a sprite sheet file (not dynamic)
 * You can edit the meta like custom physics shapes with the 'Sprite Editor'
 * It generates tilemap with extended-padding, it solves lines tearing issue between tiles.
