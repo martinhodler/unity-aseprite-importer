@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.Animations;
 using UnityEngine;
 
 
@@ -21,6 +22,12 @@ namespace AseImporter {
         SpriteRenderer,
         UIImage
     }
+    
+    public enum AseAnimatorType {
+        None,
+        AnimatorController,
+        AnimatorOverrideController
+    }
 
 
     [Serializable]
@@ -31,7 +38,8 @@ namespace AseImporter {
         [SerializeField] public Vector2 spritePivot = new Vector2(0.5f, 0.5f);
         
         [SerializeField] public AseEditorBindType bindType = AseEditorBindType.SpriteRenderer;
-        [SerializeField] public bool createController = false;
+        [SerializeField] public AseAnimatorType animType = AseAnimatorType.None;
+        [SerializeField] public AnimatorController baseAnimator = null;
 
         [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
         [SerializeField] public TileNameType tileNameType = TileNameType.Index;

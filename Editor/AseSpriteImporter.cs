@@ -176,8 +176,10 @@ namespace AseImporter {
             var sprites = GetAllSpritesFromAssetFile(filePath);
             var clips = GenerateAnimations(file, sprites);
 
-            if (settings.createController) {
+            if (settings.animType == AseAnimatorType.AnimatorController) {
                 CreateAnimatorController(clips);
+            } else if (settings.animType == AseAnimatorType.AnimatorOverrideController) {
+                CreateAnimatorOverrideController(clips);
             }
         }
 
@@ -363,6 +365,43 @@ namespace AseImporter {
                     if (clips.TryGetValue(childState.state.name, out AnimationClip clip)) {
                         childState.state.motion = clip;
                     }
+                }
+            }
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+        }
+        
+        private void CreateAnimatorOverrideController(List<AnimationClip> animations) {
+            var path = directoryName + "/" + fileName + ".overrideController";
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(path);
+            var baseController = controller?.runtimeAnimatorController;
+            if (controller == null) {
+                controller = new AnimatorOverrideController();
+                AssetDatabase.CreateAsset(controller, path);
+                baseController = settings.baseAnimator;
+            } 
+            
+            if (baseController == null) {
+                Debug.LogError("Can not make override controller");
+                return;
+            }
+
+            controller.runtimeAnimatorController = baseController;
+            var clips = new Dictionary<string, AnimationClip>();
+            foreach (var anim in animations) {
+                var stateName = anim.name;
+                stateName = stateName.Replace(fileName + "_", "");
+                clips[stateName] = anim;
+            }
+            
+            var clipPairs = new List<KeyValuePair<AnimationClip, AnimationClip>>(controller.overridesCount);
+            controller.GetOverrides(clipPairs);
+
+            foreach (var pair in clipPairs) {
+                string animationName = pair.Key.name;
+                if (clips.TryGetValue(animationName, out AnimationClip clip)) {
+                    controller[animationName] = clip;
                 }
             }
 

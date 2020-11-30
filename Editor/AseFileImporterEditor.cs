@@ -7,6 +7,7 @@ namespace AseImporter {
     [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
     public class AseFileImporterEditor : ScriptedImporterEditor {
         private string[] importTypes = {"Sprite", "Tileset (Grid)"};
+        private string[] animTypes = {"None", "Animator Controller", "Animator Override Controller"};
 
         private string[] spritePivotOptions = {
             "Center", "Top Left", "Top", "Top Right", "Left", "Right", "Bottom Left", "Bottom", "Bottom Right", "Custom"
@@ -58,7 +59,18 @@ namespace AseImporter {
                     bindTypeProperty.intValue = (int) bindType;
                 }
                 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "createController"));
+                var animTypeProperty = serializedObject.FindProperty(settings + "animType");
+                var animType = animTypeProperty.intValue;
+                EditorGUI.BeginChangeCheck();
+                animType = EditorGUILayout.Popup("Animator Type", animType, animTypes);
+                if (EditorGUI.EndChangeCheck()) {
+                    animTypeProperty.intValue = animType;
+                }
+
+                if (animType == (int)AseAnimatorType.AnimatorOverrideController) {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "baseAnimator"));
+                }
+
                 EditorGUI.indentLevel--;
             }
             
