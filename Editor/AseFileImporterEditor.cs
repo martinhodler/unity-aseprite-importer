@@ -3,11 +3,10 @@ using UnityEngine;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor;
 
-namespace AseImporter {
+namespace AsepriteImporter {
     [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
     public class AseFileImporterEditor : ScriptedImporterEditor {
         private string[] importTypes = {"Sprite", "Tileset (Grid)"};
-        private string[] animTypes = {"None", "Animator Controller", "Animator Override Controller"};
 
         private string[] spritePivotOptions = {
             "Center", "Top Left", "Top", "Top Right", "Left", "Right", "Bottom Left", "Bottom", "Bottom Right", "Custom"
@@ -25,7 +24,7 @@ namespace AseImporter {
             serializedObject.Update();
             var settings = "settings.";
             var importTypeProperty = serializedObject.FindProperty(settings + "importType");
-
+            
             EditorGUILayout.LabelField("Texture Options", EditorStyles.boldLabel);
             {
                 EditorGUI.indentLevel++;
@@ -37,8 +36,22 @@ namespace AseImporter {
                     importTypeProperty.intValue = importType;
                 }
 
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "pixelsPerUnit"));
+                var transparencyMode = serializedObject.FindProperty(settings + "transparencyMode");
+                var transparentColor = serializedObject.FindProperty(settings + "transparentColor");
 
+                EditorGUILayout.PropertyField(transparencyMode);
+                if (transparencyMode.intValue == (int)TransparencyMode.Mask) {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PropertyField(transparentColor);
+                    if (GUILayout.Button("Reset"))
+                    {
+                        transparentColor.colorValue = Color.magenta;
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "pixelsPerUnit"));
+                
                 if (importTypeProperty.intValue == (int) AseFileImportType.Sprite) {
                     PivotPopup("Pivot");
                 }
@@ -55,20 +68,20 @@ namespace AseImporter {
 
                 EditorGUI.BeginChangeCheck();
                 bindType = (AseEditorBindType) EditorGUILayout.EnumPopup("Bind Type", bindType);
-                if (EditorGUI.EndChangeCheck()) {
-                    bindTypeProperty.intValue = (int) bindType;
-                }
                 
                 var animTypeProperty = serializedObject.FindProperty(settings + "animType");
-                var animType = animTypeProperty.intValue;
-                EditorGUI.BeginChangeCheck();
-                animType = EditorGUILayout.Popup("Animator Type", animType, animTypes);
-                if (EditorGUI.EndChangeCheck()) {
-                    animTypeProperty.intValue = animType;
-                }
+                var animType = (AseAnimatorType)animTypeProperty.intValue;
+                animType = (AseAnimatorType)EditorGUILayout.EnumPopup("Animator Type", animType);
 
-                if (animType == (int)AseAnimatorType.AnimatorOverrideController) {
+                if (animType == AseAnimatorType.AnimatorOverrideController) {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "baseAnimator"));
+                }
+                
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(settings + "buildAtlas"));
+
+                if (EditorGUI.EndChangeCheck()) {
+                    bindTypeProperty.intValue = (int) bindType;
+                    animTypeProperty.intValue = (int) animType;
                 }
 
                 EditorGUI.indentLevel--;

@@ -3,7 +3,7 @@ using UnityEditor.Experimental.AssetImporters;
 using System.IO;
 using Aseprite;
 
-namespace AseImporter {
+namespace AsepriteImporter {
     [ScriptedImporter(1, new[] {"ase", "aseprite"})]
     public class AseFileImporter : ScriptedImporter {
         [SerializeField] public AseFileTextureSettings settings = new AseFileTextureSettings();

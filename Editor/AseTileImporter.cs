@@ -1,36 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aseprite;
 using Aseprite.Utils;
 using UnityEditor;
 using UnityEngine;
 
-namespace AseImporter {
+namespace AsepriteImporter {
     public class AseTileImporter {
         private AseFileTextureSettings settings;
         private int padding = 1;
         private Vector2Int size;
         private string fileName;
         private string filePath;
-        private static EditorApplication.CallbackFunction onUpdate;
         private int updateLimit;
+        private Texture2D atlas;
         
         public void Import(string path, AseFile file, AseFileTextureSettings settings) {
             this.settings = settings;
             this.size = new Vector2Int(file.Header.Width, file.Header.Height); 
 
             Texture2D frame = file.GetFrames()[0];
-            bool isNew = BuildAtlas(path, frame);
+            BuildAtlas(path, frame);
             
-            // async process
-            if (isNew) {
-                if (onUpdate == null) {
-                    onUpdate = OnUpdate;
-                }
-
-                updateLimit = 300;
-                EditorApplication.update = Delegate.Combine(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
-            }
+            updateLimit = 300;
+            EditorApplication.update += OnUpdate;
         }
 
         private void OnUpdate() {
@@ -46,11 +40,11 @@ namespace AseImporter {
             }
 
             if (done) {
-                EditorApplication.update = Delegate.Remove(EditorApplication.update, onUpdate) as EditorApplication.CallbackFunction;
+                EditorApplication.update -= OnUpdate;
             }
         }
 
-        private bool BuildAtlas(string acePath, Texture2D sprite) {
+        private void BuildAtlas(string acePath, Texture2D sprite) {
             fileName= Path.GetFileNameWithoutExtension(acePath);
             var directoryName = Path.GetDirectoryName(acePath) + "/" + fileName;
             if (!AssetDatabase.IsValidFolder(directoryName)) {
@@ -58,9 +52,8 @@ namespace AseImporter {
             }
 
             filePath = directoryName + "/" + fileName + ".png";
-            bool isNew = !File.Exists(filePath);
 
-            var atlas = GenerateAtlas(sprite);
+            GenerateAtlas(sprite);
             try {
                 File.WriteAllBytes(filePath, atlas.EncodeToPNG());
                 AssetDatabase.SaveAssets();
@@ -68,11 +61,9 @@ namespace AseImporter {
             } catch (Exception e) {
                 Debug.LogError(e.Message);
             }
-
-            return isNew;
         }
 
-        public Texture2D GenerateAtlas(Texture2D sprite) {
+        public void GenerateAtlas(Texture2D sprite) {
             var spriteSizeW = settings.tileSize.x + padding * 2;
             var spriteSizeH = settings.tileSize.y + padding * 2;
             var cols = sprite.width / settings.tileSize.x;
@@ -80,7 +71,7 @@ namespace AseImporter {
             var width = cols * spriteSizeW;
             var height = rows * spriteSizeH;
 
-            var atlas = Texture2DUtil.CreateTransparentTexture(width, height);
+            atlas = Texture2DUtil.CreateTransparentTexture(width, height);
             for (var row = 0; row < rows; row++) {
                 for (var col = 0; col < cols; col++) {
                     RectInt from = new RectInt(col * settings.tileSize.x,
@@ -95,21 +86,35 @@ namespace AseImporter {
                     atlas.Apply();
                 }
             }
-
-            return atlas;
         }
 
         private Color[] GetPixels(Texture2D sprite, RectInt from) {
             var res = sprite.GetPixels(from.x, from.y, from.width, from.height);
+            if (settings.transparencyMode == TransparencyMode.Mask) {
+                for (int index = 0; index < res.Length; index++) {
+                    var color = res[index];
+                    if (color == settings.transparentColor) {
+                        color.r = color.g = color.b = color.a = 0;
+                        res[index] = color;
+                    }
+                }
+            }
+
             return res;
         }
 
         private Color GetPixel(Texture2D sprite, int x, int y) {
-            var res = sprite.GetPixel(x, y);
-            return res;
+            var color = sprite.GetPixel(x, y);
+            if (settings.transparencyMode == TransparencyMode.Mask) {
+                if (color == settings.transparentColor) {
+                    color.r = color.g = color.b = color.a = 0; 
+                }
+            }
+            
+            return color;
         }
 
-        private void CopyColors(Texture2D sprite, Texture2D atlas, RectInt from, RectInt to ) {
+        private void CopyColors(Texture2D sprite, Texture2D atlas, RectInt from, RectInt to) {
             atlas.SetPixels(to.x, to.y, to.width, to.height, GetPixels(sprite, from));
 
             for (int index = 0; index < padding; index++) {
@@ -149,13 +154,15 @@ namespace AseImporter {
             if (importer == null) {
                 return false;
             }
-
+            
             importer.textureType = TextureImporterType.Sprite;
             importer.spritePixelsPerUnit = settings.pixelsPerUnit;
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Point;
-            importer.spritesheet = CreateMetaData(fileName);
-
+            var metaList = CreateMetaData(fileName);
+            var properties = AseSpritePostProcess.GetPhysicsShapeProperties(importer, metaList);
+            
+            importer.spritesheet = metaList.ToArray();
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.spriteImportMode = SpriteImportMode.Multiple;
 
@@ -166,16 +173,17 @@ namespace AseImporter {
                 Debug.LogWarning("There was a problem with generating sprite file: " + e);
             }
 
+            AseSpritePostProcess.RecoverPhysicsShapeProperty(properties);
             AssetDatabase.Refresh();
             AssetDatabase.SaveAssets();
             return true;
         }
 
-        private SpriteMetaData[] CreateMetaData(string fileName) {
+        private List<SpriteMetaData> CreateMetaData(string fileName) {
             var tileSize = settings.tileSize;
             var cols = size.x / tileSize.x;
             var rows = size.y / tileSize.y;
-            var res = new SpriteMetaData[rows * cols];
+            var res = new List<SpriteMetaData>();
             var index = 0;
             var height = rows * (tileSize.y + padding * 2);
             
@@ -186,8 +194,12 @@ namespace AseImporter {
                                          tileSize.x,
                                          tileSize.y);
                     var meta = new SpriteMetaData();
-                    var no = col + row * rows;
-                    meta.name = fileName + "_" + no;
+                    if (settings.tileEmpty == EmptyTileBehaviour.Remove && IsTileEmpty(rect, atlas)) {
+                        index++;
+                        continue;
+                    }
+                    
+                    meta.name = fileName + "_" + index;
                     if (settings.tileNameType == TileNameType.RowCol) {
                         meta.name = GetRowColTileSpriteName(fileName, col, row, cols, rows);
                     }
@@ -195,8 +207,8 @@ namespace AseImporter {
                     meta.rect = rect;
                     meta.alignment = settings.spriteAlignment;
                     meta.pivot = settings.spritePivot;
-
-                    res[index] = meta;
+                    res.Add(meta);
+                    
                     index++;
                 }
             }
@@ -221,6 +233,34 @@ namespace AseImporter {
             }
 
             return string.Format("{0}_{1}_{2}", fileName, row, col);
+        }
+        
+        private SerializedProperty GetPhysicsShapeProperty(TextureImporter importer, string spriteName) {
+            SerializedObject serializedImporter = new SerializedObject(importer);
+ 
+            if (importer.spriteImportMode == SpriteImportMode.Multiple) {
+                var spriteSheetSP = serializedImporter.FindProperty("m_SpriteSheet.m_Sprites");
+ 
+                for (int i = 0; i < spriteSheetSP.arraySize; i++) {
+                    if (importer.spritesheet[i].name == spriteName) {
+                        var element = spriteSheetSP.GetArrayElementAtIndex(i);
+                        return element.FindPropertyRelative("m_PhysicsShape");
+                    }
+                }
+ 
+            }
+ 
+            return serializedImporter.FindProperty("m_SpriteSheet.m_PhysicsShape");
+        }
+        
+        private bool IsTileEmpty(Rect tileRect, Texture2D atlas) {
+            Color[] tilePixels = atlas.GetPixels((int)tileRect.xMin, (int)tileRect.yMin, (int)tileRect.width, (int)tileRect.height);
+            for (int i = 0; i < tilePixels.Length; i++) {
+                if (tilePixels[i].a != 0) {
+                    return false;
+                } 
+            }
+            return true;
         }
     }
 }
