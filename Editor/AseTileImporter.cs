@@ -154,7 +154,9 @@ namespace AsepriteImporter {
             if (importer == null) {
                 return false;
             }
-            
+
+            //TextureImporterSettings textSetting = new TextureImporterSettings();
+            //importer.ReadTextureSettings(textSetting);
             importer.textureType = TextureImporterType.Sprite;
             importer.spritePixelsPerUnit = settings.pixelsPerUnit;
             importer.mipmapEnabled = false;
@@ -168,11 +170,14 @@ namespace AsepriteImporter {
 
             EditorUtility.SetDirty(importer);
             try {
+                //textSetting.spriteMeshType = SpriteMeshType.FullRect;
+                //importer.SetTextureSettings(textSetting);
+
                 importer.SaveAndReimport();
             } catch (Exception e) {
                 Debug.LogWarning("There was a problem with generating sprite file: " + e);
             }
-
+            
             AseSpritePostProcess.RecoverPhysicsShapeProperty(properties);
             AssetDatabase.Refresh();
             AssetDatabase.SaveAssets();
