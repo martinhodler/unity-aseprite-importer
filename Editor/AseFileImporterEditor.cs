@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor.Experimental.AssetImporters;
+
 using UnityEditor;
 
 namespace AsepriteImporter {
     [CustomEditor(typeof(AseFileImporter)), CanEditMultipleObjects]
-    public class AseFileImporterEditor : ScriptedImporterEditor {
+    public class AseFileImporterEditor : UnityEditor.AssetImporters.ScriptedImporterEditor {
         private string[] importTypes = {"Sprite", "Tileset (Grid)"};
 
         private string[] spritePivotOptions = {

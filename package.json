@@ -1,15 +1,15 @@
 {
   "name": "io.tinu.asepriteimporter",
   "displayName": "Aseprite Importer",
-  "version": "1.0.1",
-  "unity": "2018.1",
+  "version": "1.0.2",
+  "unity": "2019.4",
   "description": "An aseprite-file importer for unity written in C#, built upon the experimental AssetImporter API.",
   "keywords": [ "Experimental", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
   "category": "Importers",
   "dependencies": {},
   "author": {
-    "name": "Martin Hodler",
+    "name": "Unity AsepriteImporter (martinhodler, mjshin82, advra)",
     "email": "contact@tinu.io",
-    "url": "https://tinu.io"
+    "url": "https://github.com/martinhodler/unity-aseprite-importer"
   }
 }

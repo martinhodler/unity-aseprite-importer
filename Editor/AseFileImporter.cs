@@ -1,17 +1,17 @@
 using UnityEngine;
-using UnityEditor.Experimental.AssetImporters;
+
 using System.IO;
 using Aseprite;
 
 namespace AsepriteImporter {
-    [ScriptedImporter(1, new[] {"ase", "aseprite"})]
-    public class AseFileImporter : ScriptedImporter {
+    [UnityEditor.AssetImporters.ScriptedImporter(1, new[] {"ase", "aseprite"})]
+    public class AseFileImporter : UnityEditor.AssetImporters.ScriptedImporter {
         [SerializeField] public AseFileTextureSettings settings = new AseFileTextureSettings();
 
         private AseTileImporter tileImporter = new AseTileImporter();
         private AseSpriteImporter spriteImporter = new AseSpriteImporter();
 
-        public override void OnImportAsset(AssetImportContext ctx) {
+        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx) {
             name = GetFileName(ctx.assetPath);
             AseFile file = ReadAseFile(ctx.assetPath);
 

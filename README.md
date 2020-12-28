@@ -1,9 +1,7 @@
-# Aseprite-Importer for Unity (FORK!)
+# Aseprite-Importer for Unity
 ![AsepriteImporter Thumbnail](GitHub/AsepriteImporterUnity.png)
 
 This package helps you importing [.ase files](https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md) from [aseprite](https://www.aseprite.org/). The reader is fully written in C# which reads the compressed binary file and creates spritesheets, sprites and animations out of it.
-
-https://github.com/mjshin82/unity-aseprite-importer
 
 ## Difference with origin Aseprite-Importer
 The 'unity-aseprite-importer' is a good plugin but it only generate not-editable sprites and animations.
