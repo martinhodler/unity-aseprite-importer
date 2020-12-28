@@ -17,8 +17,10 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 ![image](https://user-images.githubusercontent.com/22926212/100529693-7e5eef00-322d-11eb-8d46-5c7e03e958ce.png)
 
 
-## Usage
-Import the ```unity-aseprite-importer``` folder into your project's Packages folder. Now it should import all newly added .ase-files automatically. Already imported assets do need a manual re-import.
+## Install
+* In Unity open the Package Manager (`Window > Package Manager`).
+* In the Package Manager click on the Plus-Icon in the top-left and select `Add package from git URL...`
+* Enter the URL of this Repository (`https://github.com/martinhodler/unity-aseprite-importer.git`) and press <kbd>Enter</kbd>
 
 ![Demo GIF of AsepriteImporter](GitHub/aseprite-importer-demo.gif)
 
