@@ -1,17 +1,21 @@
 using UnityEngine;
-
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
+using UnityEditor.Experimental.AssetImporters;
+#endif
 using System.IO;
 using Aseprite;
 
 namespace AsepriteImporter {
-    [UnityEditor.AssetImporters.ScriptedImporter(1, new[] {"ase", "aseprite"})]
-    public class AseFileImporter : UnityEditor.AssetImporters.ScriptedImporter {
+    [ScriptedImporter(1, new[] {"ase", "aseprite"})]
+    public class AseFileImporter : ScriptedImporter {
         [SerializeField] public AseFileTextureSettings settings = new AseFileTextureSettings();
 
         private AseTileImporter tileImporter = new AseTileImporter();
         private AseSpriteImporter spriteImporter = new AseSpriteImporter();
 
-        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx) {
+        public override void OnImportAsset(AssetImportContext ctx) {
             name = GetFileName(ctx.assetPath);
             AseFile file = ReadAseFile(ctx.assetPath);
 
