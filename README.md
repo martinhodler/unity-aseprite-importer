@@ -3,17 +3,14 @@
 
 This package helps you importing [.ase files](https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md) from [aseprite](https://www.aseprite.org/). The reader is fully written in C# which reads the compressed binary file and creates spritesheets, sprites and animations out of it.
 
-## Difference with origin Aseprite-Importer
-The 'unity-aseprite-importer' is a good plugin but it only generate not-editable sprites and animations.
-This one genetate editable resources.
-* It makes a sprite sheet file (not dynamic)
-* You can edit the meta like custom physics shapes with the 'Sprite Editor'
-* It generates tilemap with extended-padding, it solves lines tearing issue between tiles.
-* It makes animation files (not dynamic)
-* You can add a custom event to each animation
-* It makes an animation controller
-* New tilemap name rule support (row-col) which makes you find a certain tile fast.
-* Some features are removed (Transparent color, Tilemap empty behavior) 
+## Features
+* Creates a sprite sheet file (not dynamic)
+* Editable meta data like custom physics shapes with the 'Sprite Editor'
+* Generates tilemap with extended-padding (solves lines tearing issue between tiles)
+* Makes animation files (not dynamic)
+* Creates an animation controller
+* New tilemap name rule support (row-col)
+
 
 ![image](https://user-images.githubusercontent.com/22926212/100529665-2cb66480-322d-11eb-82fa-5729572a75d9.png)
 ![image](https://user-images.githubusercontent.com/22926212/100529680-57a0b880-322d-11eb-8e8a-e0b48ff0495b.png)
