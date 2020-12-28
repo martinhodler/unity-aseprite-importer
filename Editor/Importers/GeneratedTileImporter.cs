@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace AsepriteImporter {
-    public class AseTileImporter : AsepriteImporter {
+    public class GeneratedTileImporter : SpriteImporter {
         private int padding = 1;
         private Vector2Int size;
         private string fileName;
@@ -15,6 +15,10 @@ namespace AsepriteImporter {
         private int updateLimit;
         private Texture2D atlas;
 
+        public GeneratedTileImporter(AseFileImporter importer) : base(importer)
+        {
+        }
+        
         public override void OnImport()
         {
             size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height); 
@@ -250,5 +254,7 @@ namespace AsepriteImporter {
             }
             return true;
         }
+
+        
     }
 }

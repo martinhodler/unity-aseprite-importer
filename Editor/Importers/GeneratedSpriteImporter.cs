@@ -12,7 +12,7 @@ using UnityEngine.U2D;
 using UnityEngine.UI;
 
 namespace AsepriteImporter.Importers {
-    public class AseSpriteImporter : AsepriteImporter {
+    public class GeneratedSpriteImporter : SpriteImporter {
         private int padding = 1;
         private Vector2Int size;
         private string fileName;
@@ -24,6 +24,10 @@ namespace AsepriteImporter.Importers {
         private Texture2D []frames;
         
 
+        public GeneratedSpriteImporter(AseFileImporter importer) : base(importer)
+        {
+        }
+        
         public override void OnImport()
         {
             size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height); 
@@ -443,6 +447,8 @@ namespace AsepriteImporter.Importers {
             
             EditorUtility.SetDirty(atlas);
             AssetDatabase.SaveAssets();
-        }        
+        }
+
+        
     }
 }

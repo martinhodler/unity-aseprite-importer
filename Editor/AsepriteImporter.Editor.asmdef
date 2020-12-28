@@ -1,7 +1,9 @@
 {
     "name": "AsepriteImporter.Editor",
     "rootNamespace": "AsepriteImporter",
-    "references": [],
+    "references": [
+        "Unity.2D.Sprite.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ],

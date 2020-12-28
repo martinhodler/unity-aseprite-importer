@@ -35,12 +35,6 @@ namespace AsepriteImporter {
         Mask
     }
 
-    public enum AssetCreationMode
-    {
-        Multiple,
-        Bundled
-    }
-
     [Serializable]
     public class AseFileImportSettings {
         [SerializeField] public AseFileImportType importType = AseFileImportType.Sprite;
@@ -49,7 +43,9 @@ namespace AsepriteImporter {
         [SerializeField] public int pixelsPerUnit = 16;
         [SerializeField] public int spriteAlignment = 0;
         [SerializeField] public Vector2 spritePivot = new Vector2(0.5f, 0.5f);
-        
+
+        [SerializeField] public bool generateAnimations = true;
+        [SerializeField] public bool createAnimationAssets = false;
         [SerializeField] public AseAnimationBindType bindType = AseAnimationBindType.SpriteRenderer;
         [SerializeField] public AseAnimatorType animType = AseAnimatorType.None;
         [SerializeField] public AnimatorController baseAnimator = null;
@@ -58,7 +54,5 @@ namespace AsepriteImporter {
         [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
         [SerializeField] public TileNameType tileNameType = TileNameType.Index;
         [SerializeField] public EmptyTileBehaviour tileEmpty = EmptyTileBehaviour.Keep;
-
-        [SerializeField] public AssetCreationMode assetCreationMode = AssetCreationMode.Multiple;
     }
 }
