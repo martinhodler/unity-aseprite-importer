@@ -26,6 +26,9 @@ public static class AseSpritePostProcess {
 
     public static void RecoverPhysicsShapeProperty(List<SerializedProperty> properties) {
         foreach (var property in properties) {
+            if (property == null)
+                continue;
+
             // make it dirty
             property.InsertArrayElementAtIndex(0);
             property.DeleteArrayElementAtIndex(0);

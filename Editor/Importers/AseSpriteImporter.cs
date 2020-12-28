@@ -11,9 +11,8 @@ using UnityEngine;
 using UnityEngine.U2D;
 using UnityEngine.UI;
 
-namespace AsepriteImporter {
-    public class AseSpriteImporter {
-        private AseFileTextureSettings settings;
+namespace AsepriteImporter.Importers {
+    public class AseSpriteImporter : AsepriteImporter {
         private int padding = 1;
         private Vector2Int size;
         private string fileName;
@@ -23,36 +22,23 @@ namespace AsepriteImporter {
         private int rows;
         private int cols;
         private Texture2D []frames;
-        private AseFile file;
         
-        public void Import(string path, AseFile file, AseFileTextureSettings settings) {
-            this.file = file;
-            this.settings = settings;
-            this.size = new Vector2Int(file.Header.Width, file.Header.Height); 
 
-            frames = file.GetFrames();
-            BuildAtlas(path);
-            
-            updateLimit = 300;
-            EditorApplication.update += OnUpdate;
+        public override void OnImport()
+        {
+            size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height); 
+
+            frames = AsepriteFile.GetFrames();
+            BuildAtlas(AssetPath);
         }
 
-        private void OnUpdate() {
-            AssetDatabase.Refresh();
-            var done = false;
+        protected override bool OnUpdate() {
             if (GenerateSprites()) {
                 GeneratorAnimations();
-                done = true;
-            } else {
-                updateLimit--;
-                if (updateLimit <= 0) {
-                    done = true;
-                }
+                return true;
             }
-
-            if (done) {
-                EditorApplication.update -= OnUpdate;
-            }
+            
+            return false;
         }
 
         private void BuildAtlas(string acePath) {
@@ -106,10 +92,10 @@ namespace AsepriteImporter {
 
         private Color[] GetPixels(Texture2D sprite) {
             var res = sprite.GetPixels();
-            if (settings.transparencyMode == TransparencyMode.Mask) {
+            if (Settings.transparencyMode == TransparencyMode.Mask) {
                 for (int index = 0; index < res.Length; index++) {
                     var color = res[index];
-                    if (color == settings.transparentColor) {
+                    if (color == Settings.transparentColor) {
                         color.r = color.g = color.b = color.a = 0;
                         res[index] = color;
                     }
@@ -129,7 +115,7 @@ namespace AsepriteImporter {
             }
 
             importer.textureType = TextureImporterType.Sprite;
-            importer.spritePixelsPerUnit = settings.pixelsPerUnit;
+            importer.spritePixelsPerUnit = Settings.pixelsPerUnit;
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Point;
 
@@ -169,8 +155,8 @@ namespace AsepriteImporter {
                     var meta = new SpriteMetaData();
                     meta.name = fileName + index.ToString("D" + count10);
                     meta.rect = rect;
-                    meta.alignment = settings.spriteAlignment;
-                    meta.pivot = settings.spritePivot;
+                    meta.alignment = Settings.spriteAlignment;
+                    meta.pivot = Settings.spritePivot;
                     res.Add(meta);
                     index++;
 
@@ -192,17 +178,14 @@ namespace AsepriteImporter {
             var sprites = GetAllSpritesFromAssetFile(filePath);
             sprites.Sort((lhs, rhs) => String.CompareOrdinal(lhs.name, rhs.name));
 
-            var clips = GenerateAnimations(file, sprites);
-            if (settings.buildAtlas) {
-                Debug.Log("Generate Atlas");
+            var clips = GenerateAnimations(AsepriteFile, sprites);
+            if (Settings.buildAtlas) {
                 CreateSpriteAtlas(sprites);
             }
 
-            if (settings.animType == AseAnimatorType.AnimatorController) {
-                Debug.Log("Generate AnimatorController");
+            if (Settings.animType == AseAnimatorType.AnimatorController) {
                 CreateAnimatorController(clips);
-            } else if (settings.animType == AseAnimatorType.AnimatorOverrideController) {
-                Debug.Log("Generate AnimatorOverrideController");
+            } else if (Settings.animType == AseAnimatorType.AnimatorOverrideController) {
                 CreateAnimatorOverrideController(clips);
             }
         }
@@ -225,7 +208,7 @@ namespace AsepriteImporter {
                 return res;
             }
 
-            var metadatas = aseFile.GetMetaData(settings.spritePivot, settings.pixelsPerUnit);
+            var metadatas = aseFile.GetMetaData(Settings.spritePivot, Settings.pixelsPerUnit);
 
             int index = 0;
             foreach (var animation in animations) {
@@ -247,11 +230,11 @@ namespace AsepriteImporter {
                 editorBinding.path = "";
                 editorBinding.propertyName = "m_Sprite";
 
-                switch (this.settings.bindType) {
-                    case AseEditorBindType.SpriteRenderer:
+                switch (Settings.bindType) {
+                    case AseAnimationBindType.SpriteRenderer:
                         editorBinding.type = typeof(SpriteRenderer);
                         break;
-                    case AseEditorBindType.UIImage:
+                    case AseAnimationBindType.UIImage:
                         editorBinding.type = typeof(Image);
                         break;
                 }
@@ -403,7 +386,7 @@ namespace AsepriteImporter {
             if (controller == null) {
                 controller = new AnimatorOverrideController();
                 AssetDatabase.CreateAsset(controller, path);
-                baseController = settings.baseAnimator;
+                baseController = Settings.baseAnimator;
             } 
             
             if (baseController == null) {

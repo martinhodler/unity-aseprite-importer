@@ -19,7 +19,7 @@ namespace AsepriteImporter {
         Remove
     }
     
-    public enum AseEditorBindType {
+    public enum AseAnimationBindType {
         SpriteRenderer,
         UIImage
     }
@@ -35,8 +35,14 @@ namespace AsepriteImporter {
         Mask
     }
 
+    public enum AssetCreationMode
+    {
+        Multiple,
+        Bundled
+    }
+
     [Serializable]
-    public class AseFileTextureSettings {
+    public class AseFileImportSettings {
         [SerializeField] public AseFileImportType importType = AseFileImportType.Sprite;
         [SerializeField] public TransparencyMode transparencyMode = TransparencyMode.Default;
         [SerializeField] public Color transparentColor = Color.magenta;
@@ -44,7 +50,7 @@ namespace AsepriteImporter {
         [SerializeField] public int spriteAlignment = 0;
         [SerializeField] public Vector2 spritePivot = new Vector2(0.5f, 0.5f);
         
-        [SerializeField] public AseEditorBindType bindType = AseEditorBindType.SpriteRenderer;
+        [SerializeField] public AseAnimationBindType bindType = AseAnimationBindType.SpriteRenderer;
         [SerializeField] public AseAnimatorType animType = AseAnimatorType.None;
         [SerializeField] public AnimatorController baseAnimator = null;
         [SerializeField] public bool buildAtlas = true;
@@ -52,5 +58,7 @@ namespace AsepriteImporter {
         [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
         [SerializeField] public TileNameType tileNameType = TileNameType.Index;
         [SerializeField] public EmptyTileBehaviour tileEmpty = EmptyTileBehaviour.Keep;
+
+        [SerializeField] public AssetCreationMode assetCreationMode = AssetCreationMode.Multiple;
     }
 }

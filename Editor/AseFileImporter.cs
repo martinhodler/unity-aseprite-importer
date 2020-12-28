@@ -6,11 +6,15 @@ using UnityEditor.Experimental.AssetImporters;
 #endif
 using System.IO;
 using Aseprite;
+using AsepriteImporter.Importers;
+using AsepriteImporter.Settings;
 
 namespace AsepriteImporter {
     [ScriptedImporter(1, new[] {"ase", "aseprite"})]
     public class AseFileImporter : ScriptedImporter {
-        [SerializeField] public AseFileTextureSettings settings = new AseFileTextureSettings();
+        [SerializeField] public AseFileImportSettings settings = new AseFileImportSettings();
+        [SerializeField] public AseFileTextureImportSettings textureImporterSettings = new AseFileTextureImportSettings();
+        [SerializeField] public AseFileAnimationSettings[] animationSettings = new AseFileAnimationSettings[0];
 
         private AseTileImporter tileImporter = new AseTileImporter();
         private AseSpriteImporter spriteImporter = new AseSpriteImporter();
@@ -20,9 +24,9 @@ namespace AsepriteImporter {
             AseFile file = ReadAseFile(ctx.assetPath);
 
             if (settings.importType == AseFileImportType.Tileset) {
-                tileImporter.Import(ctx.assetPath, file, settings);
+                tileImporter.Import(ctx.assetPath, file, this);
             } else {
-                spriteImporter.Import(ctx.assetPath, file, settings);
+                spriteImporter.Import(ctx.assetPath, file, this);
             }
         }
 

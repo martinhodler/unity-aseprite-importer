@@ -7,41 +7,25 @@ using UnityEditor;
 using UnityEngine;
 
 namespace AsepriteImporter {
-    public class AseTileImporter {
-        private AseFileTextureSettings settings;
+    public class AseTileImporter : AsepriteImporter {
         private int padding = 1;
         private Vector2Int size;
         private string fileName;
         private string filePath;
         private int updateLimit;
         private Texture2D atlas;
-        
-        public void Import(string path, AseFile file, AseFileTextureSettings settings) {
-            this.settings = settings;
-            this.size = new Vector2Int(file.Header.Width, file.Header.Height); 
 
-            Texture2D frame = file.GetFrames()[0];
-            BuildAtlas(path, frame);
-            
-            updateLimit = 300;
-            EditorApplication.update += OnUpdate;
+        public override void OnImport()
+        {
+            size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height); 
+
+            Texture2D frame = AsepriteFile.GetFrames()[0];
+            BuildAtlas(AssetPath, frame);
         }
 
-        private void OnUpdate() {
-            AssetDatabase.Refresh();
-            var done = false;
-            if (GenerateSprites(filePath, settings, size)) {
-                done = true;
-            } else {
-                updateLimit--;
-                if (updateLimit <= 0) {
-                    done = true;
-                }
-            }
-
-            if (done) {
-                EditorApplication.update -= OnUpdate;
-            }
+        protected override bool OnUpdate()
+        {
+            return GenerateSprites(filePath, size);
         }
 
         private void BuildAtlas(string acePath, Texture2D sprite) {
@@ -63,25 +47,25 @@ namespace AsepriteImporter {
             }
         }
 
-        public void GenerateAtlas(Texture2D sprite) {
-            var spriteSizeW = settings.tileSize.x + padding * 2;
-            var spriteSizeH = settings.tileSize.y + padding * 2;
-            var cols = sprite.width / settings.tileSize.x;
-            var rows = sprite.height / settings.tileSize.y;
+        private void GenerateAtlas(Texture2D sprite) {
+            var spriteSizeW = Settings.tileSize.x + padding * 2;
+            var spriteSizeH = Settings.tileSize.y + padding * 2;
+            var cols = sprite.width / Settings.tileSize.x;
+            var rows = sprite.height / Settings.tileSize.y;
             var width = cols * spriteSizeW;
             var height = rows * spriteSizeH;
 
             atlas = Texture2DUtil.CreateTransparentTexture(width, height);
             for (var row = 0; row < rows; row++) {
                 for (var col = 0; col < cols; col++) {
-                    RectInt from = new RectInt(col * settings.tileSize.x,
-                                               row * settings.tileSize.y,
-                                               settings.tileSize.x,
-                                               settings.tileSize.y);
+                    RectInt from = new RectInt(col * Settings.tileSize.x,
+                                               row * Settings.tileSize.y,
+                                               Settings.tileSize.x,
+                                               Settings.tileSize.y);
                     RectInt to = new RectInt(col * spriteSizeW + padding, 
                                                  row * spriteSizeH + padding,
-                                                 settings.tileSize.x, 
-                                                 settings.tileSize.y);
+                                                 Settings.tileSize.x, 
+                                                 Settings.tileSize.y);
                     CopyColors(sprite, atlas, from, to);
                     atlas.Apply();
                 }
@@ -90,10 +74,10 @@ namespace AsepriteImporter {
 
         private Color[] GetPixels(Texture2D sprite, RectInt from) {
             var res = sprite.GetPixels(from.x, from.y, from.width, from.height);
-            if (settings.transparencyMode == TransparencyMode.Mask) {
+            if (Settings.transparencyMode == TransparencyMode.Mask) {
                 for (int index = 0; index < res.Length; index++) {
                     var color = res[index];
-                    if (color == settings.transparentColor) {
+                    if (color == Settings.transparentColor) {
                         color.r = color.g = color.b = color.a = 0;
                         res[index] = color;
                     }
@@ -105,8 +89,8 @@ namespace AsepriteImporter {
 
         private Color GetPixel(Texture2D sprite, int x, int y) {
             var color = sprite.GetPixel(x, y);
-            if (settings.transparencyMode == TransparencyMode.Mask) {
-                if (color == settings.transparentColor) {
+            if (Settings.transparencyMode == TransparencyMode.Mask) {
+                if (color == Settings.transparentColor) {
                     color.r = color.g = color.b = color.a = 0; 
                 }
             }
@@ -145,8 +129,7 @@ namespace AsepriteImporter {
             }
         }
         
-        private bool GenerateSprites(string path, AseFileTextureSettings settings, Vector2Int size) {
-            this.settings = settings;
+        private bool GenerateSprites(string path, Vector2Int size) {
             this.size = size; 
 
             var fileName = Path.GetFileNameWithoutExtension(path);
@@ -158,7 +141,7 @@ namespace AsepriteImporter {
             //TextureImporterSettings textSetting = new TextureImporterSettings();
             //importer.ReadTextureSettings(textSetting);
             importer.textureType = TextureImporterType.Sprite;
-            importer.spritePixelsPerUnit = settings.pixelsPerUnit;
+            importer.spritePixelsPerUnit = Settings.pixelsPerUnit;
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Point;
             var metaList = CreateMetaData(fileName);
@@ -185,7 +168,7 @@ namespace AsepriteImporter {
         }
 
         private List<SpriteMetaData> CreateMetaData(string fileName) {
-            var tileSize = settings.tileSize;
+            var tileSize = Settings.tileSize;
             var cols = size.x / tileSize.x;
             var rows = size.y / tileSize.y;
             var res = new List<SpriteMetaData>();
@@ -199,19 +182,19 @@ namespace AsepriteImporter {
                                          tileSize.x,
                                          tileSize.y);
                     var meta = new SpriteMetaData();
-                    if (settings.tileEmpty == EmptyTileBehaviour.Remove && IsTileEmpty(rect, atlas)) {
+                    if (Settings.tileEmpty == EmptyTileBehaviour.Remove && IsTileEmpty(rect, atlas)) {
                         index++;
                         continue;
                     }
                     
                     meta.name = fileName + "_" + index;
-                    if (settings.tileNameType == TileNameType.RowCol) {
+                    if (Settings.tileNameType == TileNameType.RowCol) {
                         meta.name = GetRowColTileSpriteName(fileName, col, row, cols, rows);
                     }
                     
                     meta.rect = rect;
-                    meta.alignment = settings.spriteAlignment;
-                    meta.pivot = settings.spritePivot;
+                    meta.alignment = Settings.spriteAlignment;
+                    meta.pivot = Settings.spritePivot;
                     res.Add(meta);
                     
                     index++;
