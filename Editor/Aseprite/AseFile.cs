@@ -201,7 +201,7 @@ namespace Aseprite
                 
                 switch (blendMode)
                 {
-                    case LayerBlendMode.Normal: texture = Texture2DBlender.Normal(texture, celTex); break;
+                    case LayerBlendMode.Normal: texture = Texture2DBlender.Normal(texture, celTex, opacity); break;
                     case LayerBlendMode.Multiply: texture = Texture2DBlender.Multiply(texture, celTex, opacity); break;
                     case LayerBlendMode.Screen: texture = Texture2DBlender.Screen(texture, celTex); break;
                     case LayerBlendMode.Overlay: texture = Texture2DBlender.Overlay(texture, celTex); break;

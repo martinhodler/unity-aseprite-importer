@@ -89,7 +89,7 @@ namespace Aseprite.Utils
         }
 
 
-        public static Texture2D Normal(Texture2D baseLayer, Texture2D layer)
+        public static Texture2D Normal(Texture2D baseLayer, Texture2D layer, float opacity)
         {
             Texture2D newLayer = new Texture2D(baseLayer.width, baseLayer.height);
 
@@ -102,6 +102,7 @@ namespace Aseprite.Utils
 
                     
                     Color c = new Color();
+                    b.a = b.a * opacity;
 
                     c = ((1f - b.a) * a) + (b.a * b);
                     c.a = a.a + b.a * (1f - a.a);

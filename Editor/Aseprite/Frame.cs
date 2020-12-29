@@ -11,10 +11,22 @@ namespace Aseprite
 
         public uint Length { get; private set; }
         public ushort MagicNumber { get; private set; }
+        
+        public ushort OldChunksCount { get; private set; }
         public uint ChunksCount { get; private set; }
         public ushort FrameDuration { get; private set; }
 
         public List<Chunk> Chunks { get; private set; }
+        
+        private bool useNewChunkCount = true;
+        
+        public uint GetChunkCount()
+        {
+            if (useNewChunkCount)
+                return ChunksCount;
+            else
+                return OldChunksCount;
+        }
 
         public Frame(AseFile file, BinaryReader reader)
         {
@@ -23,20 +35,18 @@ namespace Aseprite
             Length = reader.ReadUInt32();
             MagicNumber = reader.ReadUInt16();
 
-            ushort oldChunkCount = reader.ReadUInt16();
+            OldChunksCount = reader.ReadUInt16();
             FrameDuration = reader.ReadUInt16();
 
             reader.ReadBytes(2); // For Future
             
             ChunksCount = reader.ReadUInt32();
             if (ChunksCount == 0)
-                ChunksCount = oldChunkCount;
-
-            Debug.Log(ChunksCount);
+                useNewChunkCount = false;
 
             Chunks = new List<Chunk>();
 
-            for (int i = 0; i < ChunksCount; i++)
+            for (int i = 0; i < GetChunkCount(); i++)
             {
                 Chunk chunk = Chunk.ReadChunk(this, reader);
 
