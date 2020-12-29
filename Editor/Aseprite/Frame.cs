@@ -1,6 +1,7 @@
 ﻿using Aseprite.Chunks;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace Aseprite
 {
@@ -10,7 +11,7 @@ namespace Aseprite
 
         public uint Length { get; private set; }
         public ushort MagicNumber { get; private set; }
-        public ushort ChunksCount { get; private set; }
+        public uint ChunksCount { get; private set; }
         public ushort FrameDuration { get; private set; }
 
         public List<Chunk> Chunks { get; private set; }
@@ -22,10 +23,16 @@ namespace Aseprite
             Length = reader.ReadUInt32();
             MagicNumber = reader.ReadUInt16();
 
-            ChunksCount = reader.ReadUInt16();
+            ushort oldChunkCount = reader.ReadUInt16();
             FrameDuration = reader.ReadUInt16();
 
-            reader.ReadBytes(6); // For Future
+            reader.ReadBytes(2); // For Future
+            
+            ChunksCount = reader.ReadUInt32();
+            if (ChunksCount == 0)
+                ChunksCount = oldChunkCount;
+
+            Debug.Log(ChunksCount);
 
             Chunks = new List<Chunk>();
 

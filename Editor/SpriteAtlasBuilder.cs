@@ -46,9 +46,6 @@ namespace AsepriteImporter
             var width = cols * spriteSize.x;
             var height = rows * spriteSize.y;
 
-            width += padding * 2;
-            height += padding * 2;
-
             if (baseTwo)
             {
                 var baseTwoValue = CalculateNextBaseTwoValue(Math.Max(width, height));
@@ -63,7 +60,7 @@ namespace AsepriteImporter
             {
                 for (var col = 0; col < cols; ++col)
                 {
-                    Rect spriteRect = new Rect(col * spriteSize.x + padding, atlas.height - ((row + 1) * spriteSize.y) - padding, spriteSize.x, spriteSize.y);
+                    Rect spriteRect = new Rect(col * spriteSize.x, atlas.height - ((row + 1) * spriteSize.y), spriteSize.x, spriteSize.y);
                     Color[] colors = sprites[index].GetPixels();
                     atlas.SetPixels((int)spriteRect.x, (int)spriteRect.y, (int)spriteRect.width, (int)spriteRect.height, sprites[index].GetPixels());
                     atlas.Apply();
