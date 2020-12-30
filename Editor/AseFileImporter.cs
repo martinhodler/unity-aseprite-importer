@@ -84,13 +84,14 @@ namespace AsepriteImporter {
         public AseFileImporter()
         {
             var generatedImporter = new ImporterVariant("Generated (Subfolders)", new GeneratedSpriteImporter(this), new GeneratedTileImporter(this), new GeneratedImporterEditor());
-            var bundledImporter = new ImporterVariant("Bundled (preview)", new BundledSpriteImporter(this), new GeneratedTileImporter(this), new BundeledImporterEditor());
+            var bundledImporter = new ImporterVariant("Bundled (preview)", new BundledSpriteImporter(this), new GeneratedTileImporter(this), new BundledImporterEditor());
             
             importerVariants.Add(generatedImporter);
             importerVariants.Add(bundledImporter);
         }
 
-        public override void OnImportAsset(AssetImportContext ctx) {
+        public override void OnImportAsset(AssetImportContext ctx)
+        {
             texture = null;
             
             name = GetFileName(ctx.assetPath);

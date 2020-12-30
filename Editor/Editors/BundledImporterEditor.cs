@@ -3,12 +3,11 @@ using System.Linq;
 using AsepriteImporter.EditorUtils;
 using AsepriteImporter.Settings;
 using UnityEditor;
-using UnityEditor.AssetImporters;
 using UnityEngine;
 
 namespace AsepriteImporter.Editors
 {
-    public class BundeledImporterEditor : SpriteImporterEditor
+    public class BundledImporterEditor : SpriteImporterEditor
     {
         private const string FoldoutTextureAdvanced = "textureSettingsAdvanced";
         
@@ -321,7 +320,7 @@ namespace AsepriteImporter.Editors
              {
                  if (EditorUtility.IsDirty(SerializedObject.targetObject.GetInstanceID()))
                  {
-                     var assetPath = (SerializedObject.targetObject as ScriptedImporter).assetPath;
+                     var assetPath = (SerializedObject.targetObject as AseFileImporter).assetPath;
 
                      if (EditorUtility.DisplayDialog("Unapplied import settings", $"Unapplied import settings for {assetPath}.\nApply and continue to sprite editor or cancel.", "Apply", "Cancel"))
                      {
