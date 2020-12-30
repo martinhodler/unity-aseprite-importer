@@ -3,9 +3,15 @@ using Aseprite;
 using AsepriteImporter.Data;
 using AsepriteImporter.Settings;
 using UnityEditor;
-using UnityEditor.AssetImporters;
 using UnityEngine;
 using Object = UnityEngine.Object;
+
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
+using UnityEditor.Experimental.AssetImporters;
+#endif
+
 
 namespace AsepriteImporter
 {

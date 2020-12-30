@@ -7,9 +7,15 @@ using AsepriteImporter.Data;
 using AsepriteImporter.DataProviders;
 using AsepriteImporter.Settings;
 using UnityEditor;
-using UnityEditor.AssetImporters;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
+
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
+using UnityEditor.Experimental.AssetImporters;
+#endif
+
 
 namespace AsepriteImporter.Importers
 {
