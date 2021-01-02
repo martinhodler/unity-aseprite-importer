@@ -49,7 +49,7 @@ namespace AsepriteImporter {
         [SerializeField] public AseAnimationBindType bindType = AseAnimationBindType.SpriteRenderer;
         [SerializeField] public AseAnimatorType animType = AseAnimatorType.None;
         [SerializeField] public AnimatorController baseAnimator = null;
-        [SerializeField] public bool buildAtlas = true;
+        [SerializeField] public bool buildAtlas = false;
 
         [SerializeField] public Vector2Int tileSize = new Vector2Int(16, 16);
         [SerializeField] public TileNameType tileNameType = TileNameType.Index;

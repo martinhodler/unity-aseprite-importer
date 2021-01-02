@@ -22,15 +22,15 @@ namespace AsepriteImporter.Importers {
         private int rows;
         private int cols;
         private Texture2D []frames;
-        
+
 
         public GeneratedSpriteImporter(AseFileImporter importer) : base(importer)
         {
         }
-        
+
         public override void OnImport()
         {
-            size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height); 
+            size = new Vector2Int(AsepriteFile.Header.Width, AsepriteFile.Header.Height);
 
             frames = AsepriteFile.GetFrames();
             BuildAtlas(AssetPath);
@@ -41,7 +41,7 @@ namespace AsepriteImporter.Importers {
                 GeneratorAnimations();
                 return true;
             }
-            
+
             return false;
         }
 
@@ -66,9 +66,19 @@ namespace AsepriteImporter.Importers {
 
         public Texture2D GenerateAtlas(Texture2D []sprites) {
             var area = size.x * size.y * sprites.Length;
-            var sqrt = Mathf.Sqrt(area);
-            cols = Mathf.CeilToInt(sqrt / size.x);
-            rows = Mathf.CeilToInt(sqrt / size.y);
+            if (sprites.Length < 4) {
+                if (size.x <= size.y) {
+                    cols = sprites.Length;
+                    rows = 1;
+                } else {
+                    rows = sprites.Length;
+                    cols = 1;
+                }
+            } else {
+                var sqrt = Mathf.Sqrt(area);
+                cols = Mathf.CeilToInt(sqrt / size.x);
+                rows = Mathf.CeilToInt(sqrt / size.y);
+            }
 
             var width = cols * (size.x + padding * 2);
             var height = rows * (size.y + padding * 2);
@@ -82,9 +92,9 @@ namespace AsepriteImporter.Importers {
                     }
 
                     var sprite = sprites[index];
-                    var rect = new RectInt(col * (size.x + padding * 2) + padding, 
-                                           height - (row + 1) * (size.y + padding * 2) + padding, 
-                                           size.x, 
+                    var rect = new RectInt(col * (size.x + padding * 2) + padding,
+                                           height - (row + 1) * (size.y + padding * 2) + padding,
+                                           size.x,
                                            size.y);
                     CopyColors(sprite, atlas, rect);
                     index++;
@@ -111,7 +121,7 @@ namespace AsepriteImporter.Importers {
         private void CopyColors(Texture2D sprite, Texture2D atlas, RectInt to ) {
             atlas.SetPixels(to.x, to.y, to.width, to.height, GetPixels(sprite));
         }
-        
+
         private bool GenerateSprites() {
             TextureImporter importer = AssetImporter.GetAtPath(filePath) as TextureImporter;
             if (importer == null) {
@@ -124,8 +134,8 @@ namespace AsepriteImporter.Importers {
             importer.filterMode = FilterMode.Point;
 
             var metaList = CreateMetaData(fileName);
-            var properties = AseSpritePostProcess.GetPhysicsShapeProperties(importer, metaList);
-            
+            var oldProperties = AseSpritePostProcess.GetPhysicsShapeProperties(importer, metaList);
+
             importer.spritesheet = metaList.ToArray();
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.spriteImportMode = SpriteImportMode.Multiple;
@@ -137,7 +147,9 @@ namespace AsepriteImporter.Importers {
                 Debug.LogWarning("There was a problem with generating sprite file: " + e);
             }
 
-            AseSpritePostProcess.RecoverPhysicsShapeProperty(properties);
+            var newProperties = AseSpritePostProcess.GetPhysicsShapeProperties(importer, metaList);
+
+            AseSpritePostProcess.RecoverPhysicsShapeProperty(newProperties, oldProperties);
             AssetDatabase.Refresh();
             AssetDatabase.SaveAssets();
             return true;
@@ -149,11 +161,11 @@ namespace AsepriteImporter.Importers {
             var height = rows * (size.y + padding * 2);
             var done = false;
             var count10 = frames.Length >= 100 ? 3 : (frames.Length >= 10 ? 2 : 1);
-            
+
             for (var row = 0; row < rows; row++) {
                 for (var col = 0; col < cols; col++) {
                     Rect rect = new Rect(col * (size.x + padding * 2) + padding,
-                                         height - (row + 1) * (size.y + padding * 2) + padding, 
+                                         height - (row + 1) * (size.y + padding * 2) + padding,
                                          size.x,
                                          size.y);
                     var meta = new SpriteMetaData();
@@ -196,15 +208,15 @@ namespace AsepriteImporter.Importers {
 
         private WrapMode GetDefaultWrapMode(string animName) {
             animName = animName.ToLower();
-            if (animName.IndexOf("walk", StringComparison.Ordinal) >= 0 || 
-                animName.IndexOf("run", StringComparison.Ordinal) >= 0 || 
+            if (animName.IndexOf("walk", StringComparison.Ordinal) >= 0 ||
+                animName.IndexOf("run", StringComparison.Ordinal) >= 0 ||
                 animName.IndexOf("idle", StringComparison.Ordinal) >= 0) {
                 return WrapMode.Loop;
             }
 
             return WrapMode.Once;
         }
-        
+
         private List<AnimationClip> GenerateAnimations(AseFile aseFile, List<Sprite> sprites) {
             List<AnimationClip> res = new List<AnimationClip>();
             var animations = aseFile.GetAnimations();
@@ -224,9 +236,9 @@ namespace AsepriteImporter.Importers {
                     clip.wrapMode = GetDefaultWrapMode(animation.TagName);
                 } else {
                     AnimationClipSettings animSettings = AnimationUtility.GetAnimationClipSettings(clip);
-                    clip.wrapMode = animSettings.loopTime ? WrapMode.Loop : WrapMode.Once; 
+                    clip.wrapMode = animSettings.loopTime ? WrapMode.Loop : WrapMode.Once;
                 }
-                
+
                 clip.name = fileName + "_" + animation.TagName;
                 clip.frameRate = 25;
 
@@ -301,13 +313,13 @@ namespace AsepriteImporter.Importers {
                 foreach (var childTransform in transformCurveX.Keys) {
                     EditorCurveBinding
                     bindingX = new EditorCurveBinding {
-                        path = childTransform, 
-                        type = typeof(Transform), 
+                        path = childTransform,
+                        type = typeof(Transform),
                         propertyName = "m_LocalPosition.x"
                     },
                     bindingY = new EditorCurveBinding {
-                        path = childTransform, 
-                        type = typeof(Transform), 
+                        path = childTransform,
+                        type = typeof(Transform),
                         propertyName = "m_LocalPosition.y"
                     };
                     MakeConstant(transformCurveX[childTransform]);
@@ -333,7 +345,7 @@ namespace AsepriteImporter.Importers {
                 AnimationUtility.SetKeyRightTangentMode(curve, i, AnimationUtility.TangentMode.Constant);
             }
         }
-        
+
         private static List<Sprite> GetAllSpritesFromAssetFile(string imageFilename) {
             var assets = AssetDatabase.LoadAllAssetsAtPath(imageFilename);
 
@@ -347,7 +359,7 @@ namespace AsepriteImporter.Importers {
 
             return sprites;
         }
-        
+
         private void CreateAnimatorController(List<AnimationClip> animations) {
             var path = directoryName + "/" + fileName + ".controller";
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
@@ -359,7 +371,7 @@ namespace AsepriteImporter.Importers {
                 foreach (var animation in animations) {
                     var stateName = animation.name;
                     stateName = stateName.Replace(fileName + "_", "");
-                    
+
                     AnimatorState state = controller.layers[0].stateMachine.AddState(stateName);
                     state.motion = animation;
                 }
@@ -370,7 +382,7 @@ namespace AsepriteImporter.Importers {
                     stateName = stateName.Replace(fileName + "_", "");
                     clips[stateName] = anim;
                 }
-                
+
                 var childStates = controller.layers[0].stateMachine.states;
                 foreach (var childState in childStates) {
                     if (clips.TryGetValue(childState.state.name, out AnimationClip clip)) {
@@ -382,7 +394,7 @@ namespace AsepriteImporter.Importers {
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
         }
-        
+
         private void CreateAnimatorOverrideController(List<AnimationClip> animations) {
             var path = directoryName + "/" + fileName + ".overrideController";
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(path);
@@ -391,8 +403,8 @@ namespace AsepriteImporter.Importers {
                 controller = new AnimatorOverrideController();
                 AssetDatabase.CreateAsset(controller, path);
                 baseController = Settings.baseAnimator;
-            } 
-            
+            }
+
             if (baseController == null) {
                 Debug.LogError("Can not make override controller");
                 return;
@@ -405,7 +417,7 @@ namespace AsepriteImporter.Importers {
                 stateName = stateName.Replace(fileName + "_", "");
                 clips[stateName] = anim;
             }
-            
+
             var clipPairs = new List<KeyValuePair<AnimationClip, AnimationClip>>(controller.overridesCount);
             controller.GetOverrides(clipPairs);
 
@@ -419,7 +431,7 @@ namespace AsepriteImporter.Importers {
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
         }
-        
+
         private void CreateSpriteAtlas(List<Sprite> sprites) {
             var path = directoryName + "/" + fileName + ".spriteatlas";
             var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
@@ -439,16 +451,16 @@ namespace AsepriteImporter.Importers {
 
             var platformSetting = new TextureImporterPlatformSettings();
             platformSetting.textureCompression = TextureImporterCompression.Uncompressed;
-            
+
             atlas.SetTextureSettings(texSetting);
             atlas.SetPackingSettings(packSetting);
             atlas.SetPlatformSettings(platformSetting);
             atlas.Add(sprites.ToArray());
-            
+
             EditorUtility.SetDirty(atlas);
             AssetDatabase.SaveAssets();
         }
 
-        
+
     }
 }
