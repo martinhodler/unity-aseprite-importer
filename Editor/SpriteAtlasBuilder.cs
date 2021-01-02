@@ -120,11 +120,34 @@ namespace AsepriteImporter
 
         private static void CalculateColsRows(int spritesCount, Vector2 spriteSize, out int cols, out int rows)
         {
-            float area = spriteSize.x * spriteSize.y * spritesCount;
-            float sqrt = Mathf.Sqrt(area);
+            float minDifference = float.MaxValue;
+            cols = spritesCount;
+            rows = 1;
+            
+            float width = spriteSize.x * cols;
+            float height = spriteSize.y * rows;
 
-            cols = Mathf.CeilToInt(sqrt / spriteSize.x);
-            rows = Mathf.CeilToInt(sqrt / spriteSize.y);
+            
+            
+            for (rows = 1; rows < spritesCount; ++rows)
+            {
+                cols = Mathf.CeilToInt((float)spritesCount / rows);
+                
+                width = spriteSize.x * cols;
+                height = spriteSize.y * rows;
+
+                float difference = Mathf.Abs(width - height);
+                if (difference < minDifference)
+                {
+                    minDifference = difference;
+                }
+                else
+                {
+                    rows -= 1;
+                    cols = Mathf.CeilToInt((float)spritesCount / rows);
+                    break;
+                }
+            }
         }
 
         private static int CalculateNextBaseTwoValue(int value)
