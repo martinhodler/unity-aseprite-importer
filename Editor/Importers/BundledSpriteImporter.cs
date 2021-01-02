@@ -174,10 +174,7 @@ namespace AsepriteImporter.Importers
 
             Texture2D[] frames = AsepriteFile.GetFrames();
 
-            AseFileSpriteImportData[] importData;
-            
-            atlas = atlasBuilder.GenerateAtlas(frames, out importData, false);
-            
+            atlas = atlasBuilder.GenerateAtlas(frames, out var importData, false);
 
             textureWidth = atlas.width;
             textureHeight = atlas.height;
