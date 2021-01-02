@@ -52,12 +52,12 @@ namespace AsepriteImporter.Importers
             sprites = new Sprite[0];
             
             GenerateAtlasTexture();
-
+            
             if (SpriteImportData == null || SpriteImportData.Length == 0 || TextureImportSettings.spriteMode == (int)SpriteImportMode.Single)
             {
                 SetSingleSpriteImportData();
             }
-
+            
             ProcessAnimationSettings();
 
             GenerateTexture(AssetPath);
@@ -91,7 +91,7 @@ namespace AsepriteImporter.Importers
         
         public void SetSingleSpriteImportData()
         {
-            Rect spriteRect = new Rect(0, 0, textureWidth, textureHeight);
+            Rect spriteRect = new Rect(0, atlas.height - AsepriteFile.Header.Height, AsepriteFile.Header.Width, AsepriteFile.Header.Height);
             SpriteImportData = new AseFileSpriteImportData[]
             {
                     new AseFileSpriteImportData()
@@ -174,7 +174,7 @@ namespace AsepriteImporter.Importers
 
             Texture2D[] frames = AsepriteFile.GetFrames();
 
-            atlas = atlasBuilder.GenerateAtlas(frames, out AseFileSpriteImportData[] importData);
+            atlas = atlasBuilder.GenerateAtlas(frames, out var importData, false);
 
             textureWidth = atlas.width;
             textureHeight = atlas.height;
