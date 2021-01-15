@@ -50,8 +50,9 @@ public static class AseSpritePostProcess {
                         newPt.vector2Value = oldPt.vector2Value;
                     }
                 }
-
-                property ??= newItem;
+                
+                if (property == null)
+                    property = newItem;
             }
         }
 
