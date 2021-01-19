@@ -1,6 +1,9 @@
 # Aseprite-Importer for Unity
 ![AsepriteImporter Thumbnail](GitHub/AsepriteImporterUnity.png)
 
+
+[![openupm](https://img.shields.io/npm/v/io.tinu.asepriteimporter?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/io.tinu.asepriteimporter/)
+
 This package helps you importing [.ase files](https://github.com/aseprite/aseprite/blob/master/docs/ase-file-specs.md) from [aseprite](https://www.aseprite.org/). The reader is fully written in C# which reads the compressed binary file and creates spritesheets, sprites and animations out of it.
 
 ## Features
@@ -11,6 +14,7 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 * Creates an animation controller
 * New tilemap name rule support (row-col)
 
+![Demo GIF of AsepriteImporter](GitHub/aseprite-importer-demo.gif)
 
 ![image](https://user-images.githubusercontent.com/22926212/100529665-2cb66480-322d-11eb-82fa-5729572a75d9.png)
 ![image](https://user-images.githubusercontent.com/22926212/100529680-57a0b880-322d-11eb-8e8a-e0b48ff0495b.png)
@@ -18,12 +22,34 @@ This package helps you importing [.ase files](https://github.com/aseprite/asepri
 
 
 ## Install
+### OpenUPM
+#### Unity Package
+OpenUPM lets you install packages more easily by providing a downloadable unity package which will setup the package automatically.
+You can find the download on the following link:
+
+[![openupm](https://img.shields.io/npm/v/io.tinu.asepriteimporter?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/io.tinu.asepriteimporter/) https://openupm.com/packages/io.tinu.asepriteimporter/
+
+
+#### CLI
+##### Prerequisites
+- [Node.js 12](https://nodejs.org/en/)
+- [openupm-cli](https://github.com/openupm/openupm-cli#openupm-cli).
+
+See: https://openupm.com/docs/getting-started.html#installing-openupm-cli
+
+##### OpenUPM CLI Install
+
+```sh
+# Go to your Unity project directory
+cd YOUR_UNITY_PROJECT_DIR
+
+# Install package: io.tinu.asepriteimporter
+openupm add io.tinu.asepriteimporter
+```
+### Unity
 * In Unity open the Package Manager (`Window > Package Manager`).
 * In the Package Manager click on the Plus-Icon in the top-left and select `Add package from git URL...`
 * Enter the URL of this Repository (`https://github.com/martinhodler/unity-aseprite-importer.git`) and press <kbd>Enter</kbd>
-
-![Demo GIF of AsepriteImporter](GitHub/aseprite-importer-demo.gif)
-
 
 ## License
 

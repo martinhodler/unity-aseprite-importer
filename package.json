@@ -1,11 +1,11 @@
 {
   "name": "io.tinu.asepriteimporter",
   "displayName": "Aseprite Importer",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "unity": "2019.2",
   "unityRelease": "0a19",
   "description": "An aseprite-file importer for unity written in C#, built upon the experimental AssetImporter API.",
-  "keywords": [ "Experimental", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
+  "keywords": [ "Asset", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
   "category": "Importers",
   "dependencies": {
     "com.unity.2d.sprite": "1.0.0"
