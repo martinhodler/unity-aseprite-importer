@@ -7,7 +7,9 @@
   "description": "An aseprite-file importer for unity written in C#, built upon the experimental AssetImporter API.",
   "keywords": [ "Experimental", "Importer", "AssetImporter", "Aseprite", "Textures", "Sprites" ],
   "category": "Importers",
-  "dependencies": {},
+  "dependencies": {
+    "com.unity.2d.sprite": "1.0.0"
+  },
   "author": {
     "name": "Unity AsepriteImporter (martinhodler, mjshin82, advra)",
     "email": "contact@tinu.io",
